@@ -5,19 +5,19 @@ function GuestList() {
     const [getData, setData] = useState([]);
 
     useEffect(() => {
-        axios.get('http://localhost:3000/')
+        axios.get(import.meta.env.VITE_API_URL,Headers={'Access-Control-Allow-Origin':'*'})
             .then(response => setData(response.data))
             .catch(error => console.log(error));
     }, []);
     const handleDelete = (id) => {
-        axios.put(`http://localhost:3000/delete/${id}`)
+        axios.put(`${import.meta.env.VITE_API_URL}delete/${id}`)
             .then(response => {
                 location.reload();
             })
             .catch(error => console.log(error));
     }
     const copyFeedbakLink = (id) => {
-        const feedbackLink = `http://localhost:5173/simplewtstar/${id}`;
+        const feedbackLink = import.meta.env.VITE_BASE_URL + `simplewtstar/${id}`;
         navigator.clipboard.writeText(feedbackLink);
         alert('Feedback link copied to clipboard!');
     }   

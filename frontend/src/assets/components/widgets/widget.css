@@ -1,0 +1,49 @@
+.feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.feedback-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feedback-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.guest-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #333;
+}
+
+.rating {
+  font-size: 14px;
+  color: #f52335;
+}
+
+.comment {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #8a0f0f; 
+}
+
+.empty {
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}

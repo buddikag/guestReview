@@ -20,7 +20,7 @@ const SimpleWtStar = () => {
       comment,
       guestid: window.location.pathname.split("/").pop()
     };
-    axios.post('http://localhost:3000/simplewtstar/add', feedbackData)
+    axios.post(`${import.meta.env.VITE_API_URL}simplewtstar/add`, feedbackData)
       .then((response) => {
         alert("Feedback submitted successfully!");
         setRating(0);

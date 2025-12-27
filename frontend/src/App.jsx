@@ -5,7 +5,6 @@ import AddGuest from "./assets/components/AddGuest.jsx";
 import UpdateGuest from "./assets/components/UpdateGuest.jsx";
 import WtNotification from "./assets/components/WtNotification.jsx";
 import SimpleWtStar from "./assets/components/surveys/SimpleWtStar.jsx";
-import Widget from "./assets/components/widgets/HomeWd.jsx";
 import ListFeedback from "./assets/components/ListFeedback.jsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -20,7 +19,6 @@ function App() {
             <Route path="/wtnotification" element={<WtNotification/>} />
             <Route path="/simplewtstar/:guestid" element={<SimpleWtStar/>} />
             <Route path="/listfeedback" element={<ListFeedback/>} />
-            <Route path="/widget" element={<Widget/>} />
         </Routes>
     </BrowserRouter>
   )

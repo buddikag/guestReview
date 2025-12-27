@@ -5,7 +5,7 @@ import MainNavigation from "./MainNavigation.jsx";
 const ListFeedback = () => {
   const [feedbacks, setFeedbacks] = useState([]);
   useEffect(() => {
-    axios.get('http://localhost:3000/simplewtstar/')
+    axios.get(`${import.meta.env.VITE_API_URL}simplewtstar/`, { headers: { 'Access-Control-Allow-Origin': '*' } })
       .then(response => setFeedbacks(response.data))
       .catch(error => console.log(error));
   }, []);

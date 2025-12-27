@@ -11,7 +11,7 @@ const UpdateGuest = (props) => {
     const [endDate, setEndDate] = useState('');
     const [roomNumber, setRoomNumber] = useState('');
   useEffect(() => {
-    axios.get(`http://localhost:3000/getGuest/${guestid}`)
+    axios.get(`${import.meta.env.VITE_API_URL}getGuest/${guestid}`, { headers: { 'Access-Control-Allow-Origin': '*' } })
       .then(response => {
         setGuestName(response.data.name);
         setPhone(response.data.phone);
@@ -34,7 +34,7 @@ const UpdateGuest = (props) => {
       endDate: endDate,
       roomNumber: roomNumber,
     };
-    axios.put(`http://localhost:3000/update/${guestid}`, data)
+    axios.put(`${import.meta.env.VITE_API_URL}update/${guestid}`, data)
       .then(response => {
         location.reload();
         alert('Guest updated successfully!');
