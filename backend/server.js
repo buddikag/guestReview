@@ -24,6 +24,12 @@ const connection = mysql.createConnection({
   password: "",
   database: "gss",
 });
+// const connection = mysql.createConnection({
+//   host: "localhost",
+//   user: "u668410136_user",
+//   password: "spaceX25@",
+//   database: "u668410136_gss"
+// });
 
 
 app.get("/", (req, res) => {

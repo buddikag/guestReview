@@ -8,6 +8,12 @@ const connection = mysql.createConnection({
   password: "",
   database: "gss",
 });
+// const connection = mysql.createConnection({
+//   host: "localhost",
+//   user: "u668410136_user",
+//   password: "spaceX25@",
+//   database: "u668410136_gss"
+// });
 
 // Define a GET route relative to the mount path (e.g., the final path is /users/)
 // router.get('/', (req, res) => {
