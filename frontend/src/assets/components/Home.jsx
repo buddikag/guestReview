@@ -54,7 +54,7 @@ const Home = () => {
                     alignItems: 'center'
                 }}>
                     <img 
-                        src="/backImage.png" 
+                        src="/backImage2.png" 
                         alt="Guest Management" 
                         style={{
                             maxWidth: '100%',
