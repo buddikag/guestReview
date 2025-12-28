@@ -27,10 +27,26 @@ const connection = mysql.createConnection({
 
 
 app.get("/", (req, res) => {
-  const queery = "SELECT * FROM guest where status = 1";
-  connection.query(queery, (err, result) => {
-    if (err) return res.json({ Message: err });
-    return res.json(result);
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 5;
+  const offset = (page - 1) * limit;
+  // console.log("Page:", page, "Limit:", limit, "Offset:", offset);
+  // console.log("Get all guests endpoint hit");
+  // const queery = "SELECT * FROM guest where status = 1 ORDER BY id DESC";
+  // connection.query(queery, (err, result) => {
+  //   if (err) return res.json({ Message: err });
+  //   return res.json(result);
+  // });
+  const countQuery = "SELECT COUNT(*) AS count FROM guest WHERE status = 1";
+  connection.query(countQuery, (countErr, countResult) => {
+    if (countErr) return res.status(500).json({ Message: countErr });
+    const totalRecords = countResult[0].count;
+    const totalPages = Math.ceil(totalRecords / limit);
+    const query = "SELECT * FROM guest WHERE status = 1 ORDER BY id DESC LIMIT ? OFFSET ?";
+    connection.query(query, [limit, offset], (err, result) => {
+      if (err) return res.status(500).json({ Message: err });
+      return res.json({ data: result, totalRecords, totalPages });
+    });
   });
 });
 
@@ -45,14 +61,34 @@ app.get("/getGuest/:id", (req, res) => {
 });
 
 app.put("/update/:id", (req, res) => {
-  console.log("Update endpoint hit");
+  // console.log("Update endpoint hit");
+  // const id = req.params.id;
+  // const { name, phone, email, startDate, endDate, roomNumber } = req.body;
+  // const query = "UPDATE guest SET name = ?, phone = ?, email = ?, startDate = ?, endDate = ?, roomNumber = ? WHERE id = ?";
+  // connection.query(query, [name, phone, email, startDate, endDate, roomNumber, id], (err, result) => {
+  //   if (err) return res.status(500).json({ Message: err });
+  //   if (result.affectedRows === 0) return res.status(404).json({ Message: "Guest not found" });
+  //   return res.json({ Message: "Guest updated successfully" });
+  // });
   const id = req.params.id;
   const { name, phone, email, startDate, endDate, roomNumber } = req.body;
-  const query = "UPDATE guest SET name = ?, phone = ?, email = ?, startDate = ?, endDate = ?, roomNumber = ? WHERE id = ?";
-  connection.query(query, [name, phone, email, startDate, endDate, roomNumber, id], (err, result) => {
+  if (!name || !phone || !email || !startDate || !endDate || !roomNumber) {
+    return res.status(400).json({ Message: "All fields are required" });
+  }
+  /*************  ✨ Windsurf Command ⭐  *************/
+  connection.query("SELECT * FROM guest WHERE email = ? AND id != ? AND status = 1", [email, id], (err, emailResult) => {
     if (err) return res.status(500).json({ Message: err });
-    if (result.affectedRows === 0) return res.status(404).json({ Message: "Guest not found" });
-    return res.json({ Message: "Guest updated successfully" });
+    if (emailResult.length > 0) return res.status(409).json({ Message: "Email already exists" });
+    connection.query("SELECT * FROM guest WHERE phone = ? AND id != ? AND status = 1", [phone, id], (err, phoneResult) => {
+      if (err) return res.status(500).json({ Message: err });
+      if (phoneResult.length > 0) return res.status(409).json({ Message: "Phone already exists" });
+    const query = "UPDATE guest SET name = ?, phone = ?, email = ?, startDate = ?, endDate = ?, roomNumber = ? WHERE id = ?";
+    connection.query(query, [name, phone, email, startDate, endDate, roomNumber, id], (err, result) => {
+      if (err) return res.status(500).json({ Message: err });
+      if (result.affectedRows === 0) return res.status(404).json({ Message: "Guest not found" });
+      return res.json({ Message: "Guest updated successfully" });
+    });
+  });
   });
 });
 
@@ -71,15 +107,21 @@ app.post("/add", (req, res) => {
     return res.status(400).json({ Message: "All fields are required" });
   }
   
-  const Checkquery = "SELECT * FROM guest WHERE name = ? AND phone = ? AND email = ? AND startDate = ? AND endDate = ? AND roomNumber = ?";
-  connection.query(Checkquery, [name, phone, email, startDate, endDate, roomNumber], (err, result) => {
+/*************  ✨ Windsurf Command ⭐  *************/
+  connection.query("SELECT * FROM guest WHERE email = ? AND status = 1", [email], (err, emailResult) => {
     if (err) return res.status(500).json({ Message: err });
-    if (result.length > 0) return res.status(409).json({ Message: "Guest already exists" });
-  });
+    if (emailResult.length > 0) return res.status(409).json({ Message: "Email already exists" });
 
-  const query = "INSERT INTO guest (name, phone, email, startDate, endDate, roomNumber) VALUES (?,?,?,?,?,?)";
-  connection.query(query, [name, phone, email, startDate, endDate, roomNumber], (err, result) => {
-    if (err) return res.status(500).json({ Message: err });
-    return res.json({ Message: "Guest added successfully" });
+    connection.query("SELECT * FROM guest WHERE phone = ? AND status = 1", [phone], (err, phoneResult) => {
+      if (err) return res.status(500).json({ Message: err });
+      if (phoneResult.length > 0) return res.status(409).json({ Message: "Phone already exists" });
+
+      const query = "INSERT INTO guest (name, phone, email, startDate, endDate, roomNumber) VALUES (?,?,?,?,?,?)";
+      connection.query(query, [name, phone, email, startDate, endDate, roomNumber], (err, result) => {
+        if (err) return res.status(500).json({ Message: err });
+        return res.json({ Message: "Guest added successfully" });
+      });
+    });
   });
+/*******  11dd0357-6023-4046-ae1a-c3f2f6667c52  *******/  
 });

@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import PhoneInput from "react-phone-number-input";
+import { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import GuestList from "./GuestList.jsx";
@@ -6,6 +9,7 @@ import MainNavigation from "./MainNavigation.jsx";
 
 const AddGuest = () => {
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -13,8 +17,23 @@ const AddGuest = () => {
   const [endDate, setEndDate] = useState('');
   const [roomNumber, setRoomNumber] = useState('');
 
+  const [phoneno, setPhoneno] = useState("");
+  const [errorphone, setErrorphone] = useState("");
+
+  const validatePhone = () => {
+    if (!phone || !isValidPhoneNumber(phone)) {
+      setErrorphone("Please enter a valid phone number");
+      return;
+    }
+    setErrorphone("");
+    // alert("Valid phone: " + phone);
+  };
+
   const handleSubmit = (event) => {
+    setError('');
+    setMessage('');
     event.preventDefault();
+    validatePhone();
     const data = {
       name,
       phone,
@@ -25,14 +44,15 @@ const AddGuest = () => {
     };
     axios.post('http://localhost:3000/add', data)
       .then(response => {
-        alert('Guest added successfully!');
+        setMessage(response.data['Message']);
         setName('');
         setPhone('');
         setEmail('');
         setStartDate('');
         setEndDate('');
         setRoomNumber('');
-        // location.reload();
+        setError('');
+        location.reload();
       })
         .catch(error => {
             console.log(error.response.data['Message']);
@@ -41,7 +61,7 @@ const AddGuest = () => {
   };
 
   return (
-    <div className="w-full bg-gray-200">
+    <div className="w-full">
       <header className="bg-dark text-white w-100vw">
         <MainNavigation />
       </header>
@@ -64,17 +84,20 @@ const AddGuest = () => {
               />
             </div>
           </div>
-          <div className="col-sm-6">
-            <div className="form-group">
-              <label>Phone</label>
-              <input
-                type="text"
-                className="form-control"
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-              />
-            </div>
+          <div style={{ maxWidth: '100%', marginTop: '25px' }} className="col-sm-6">
+            <PhoneInput
+              style={{ maxWidth: '100%' }}
+              defaultCountry="LK"
+              placeholder="Enter phone number"
+              value={phone}
+              onChange={setPhone}
+            />
+
+            {errorphone && <p style={{ color: "red" }}>{errorphone}</p>}
+
+            {/* <button onClick={validatePhone}>Submit</button> */}
           </div>
+
         </div>
         <div className="row">
           <div className="col-sm-6">
@@ -132,15 +155,15 @@ const AddGuest = () => {
             </div>
             <div className="col-sm-6">
             <div className="form-group mt-3">
-            <p className="text-danger">{error}</p>
+            {error && <div className="alert alert-danger mt-3" role="alert">{error}</div>}
+            {message && <div className="alert alert-success mt-3" role="alert">{message}</div>}
             </div>            
             </div>
         </div>
-
-        <GuestList />
       </form>
+      <GuestList />
       </div>
-      <footer className="bg-dark text-white p-3 fixed-bottom">
+      <footer className="bg-dark text-white p-3">
         <p>&copy; 2025</p>
       </footer>
     </div>

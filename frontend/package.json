@@ -19,6 +19,7 @@
     "react-dom": "^19.2.0",
     "react-js-pagination": "^3.0.3",
     "react-paginate": "^8.3.0",
+    "react-phone-number-input": "^3.4.14",
     "react-router-dom": "^7.10.1"
   },
   "devDependencies": {
