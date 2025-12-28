@@ -47,7 +47,14 @@ function GuestList() {
         window.open(url, "_blank");
     };  
     return (
-        <div className="p-3 bg-white rounded shadow-sm mb-20 mt-2">
+        <div className="bg-white rounded" style={{
+            padding: 'var(--spacing-card-padding)',
+            boxShadow: 'var(--shadow-card)',
+            marginBottom: 'var(--spacing-section-margin)',
+            marginTop: 'var(--spacing-lg)',
+            border: '1px solid var(--color-gray-200)',
+            borderRadius: 'var(--radius-lg)'
+        }}>
             <table className="table table-bordered table-striped">
                 <thead>
                     <tr> 
@@ -82,28 +89,50 @@ function GuestList() {
                 </tbody>
             </table>
             {/* Pagination */}
-            <div className="flex justify-center gap-2 mt-4">
-                <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-                >
-                Prev
-                </button>
-
-                <span className="px-3 py-1">
-                {page} / {totalPages}
-                </span>
-                
-
-                <button
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-                className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-                >
-                Next
-                </button>
-            </div>
+            <nav aria-label="Page navigation" style={{
+                marginTop: 'var(--spacing-lg)',
+                paddingTop: 'var(--spacing-md)'
+            }}>
+                <ul className="pagination justify-content-center mb-0" style={{
+                    gap: '10px'
+                }}>
+                    <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
+                        <button
+                            className="page-link"
+                            onClick={() => setPage(page - 1)}
+                            disabled={page === 1}
+                            aria-label="Previous"
+                        >
+                            <span aria-hidden="true">&laquo;</span>
+                            <span className="ms-1">Previous</span>
+                        </button>
+                    </li>
+                    {[...Array(totalPages)].map((_, index) => {
+                        const pageNumber = index + 1;
+                        return (
+                            <li key={pageNumber} className={`page-item ${page === pageNumber ? 'active' : ''}`}>
+                                <button
+                                    className="page-link"
+                                    onClick={() => setPage(pageNumber)}
+                                >
+                                    {pageNumber}
+                                </button>
+                            </li>
+                        );
+                    })}
+                    <li className={`page-item ${page === totalPages ? 'disabled' : ''}`}>
+                        <button
+                            className="page-link"
+                            onClick={() => setPage(page + 1)}
+                            disabled={page === totalPages}
+                            aria-label="Next"
+                        >
+                            <span className="me-1">Next</span>
+                            <span aria-hidden="true">&raquo;</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
         </div>
     );
 }

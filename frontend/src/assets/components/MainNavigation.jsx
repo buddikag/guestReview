@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 const MainNavigation = () => {
   return (
     <div className="container-fluid p-0 m-0" >
-    <nav className="navbar navbar-expand-lg navbar-light bg-gray-800">
+    <nav className="navbar navbar-expand-lg navbar-light" style={{ backgroundColor: 'var(--color-primary)' }}>
       <div className="container">
         <Link className="navbar-brand text-white" to="/">
           GSS

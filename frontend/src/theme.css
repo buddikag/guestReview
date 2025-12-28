@@ -1,0 +1,121 @@
+/* ============================================
+   Guest Review System - Color Theme
+   ============================================ */
+
+:root {
+  /* Primary Colors */
+  --color-primary: #4D2B8C;
+  --color-primary-dark: #3A2169;
+  --color-primary-light: #6B3FA3;
+  --color-primary-hover: #5A3599;
+  
+  /* Secondary Colors */
+  --color-secondary: #85409D;
+  --color-secondary-dark: #6B3380;
+  --color-secondary-light: #9D5AB3;
+  --color-secondary-hover: #9245A8;
+  
+  /* Accent Colors */
+  --color-accent: #EEA727;
+  --color-accent-dark: #D6941F;
+  --color-accent-light: #F5B84D;
+  --color-accent-hover: #F2B43A;
+  
+  /* Highlight/Yellow */
+  --color-highlight: #FFEF5F;
+  --color-highlight-dark: #E6D84F;
+  --color-highlight-light: #FFF47A;
+  
+  /* Neutral Colors */
+  --color-white: #FFFFFF;
+  --color-light: #F8F9FA;
+  --color-gray-100: #F5F6FA;
+  --color-gray-200: #E9ECEF;
+  --color-gray-300: #DEE2E6;
+  --color-gray-400: #CED4DA;
+  --color-gray-500: #ADB5BD;
+  --color-gray-600: #6C757D;
+  --color-gray-700: #495057;
+  --color-gray-800: #343A40;
+  --color-gray-900: #212529;
+  
+  /* Text Colors */
+  --text-primary: #212529;
+  --text-secondary: #6C757D;
+  --text-light: #FFFFFF;
+  --text-muted: #ADB5BD;
+  
+  /* Status Colors */
+  --color-success: #28A745;
+  --color-danger: #DC3545;
+  --color-warning: #FFC107;
+  --color-info: #17A2B8;
+  
+  /* Professional Light Gray Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(0, 0, 0, 0.08);
+  
+  /* Card-specific shadows */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 16px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--color-accent) 0%, var(--color-highlight) 100%);
+  --gradient-hero: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--color-accent) 100%);
+  
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 50%;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  
+  /* Industry Standard Spacing (8px base unit) */
+  --spacing-xs: 4px;    /* 0.5 units */
+  --spacing-sm: 8px;    /* 1 unit */
+  --spacing-md: 16px;   /* 2 units */
+  --spacing-lg: 24px;   /* 3 units */
+  --spacing-xl: 32px;   /* 4 units */
+  --spacing-2xl: 40px;  /* 5 units */
+  --spacing-3xl: 48px;  /* 6 units */
+  --spacing-4xl: 64px;  /* 8 units */
+  
+  /* Component-specific spacing */
+  --spacing-card-padding: 24px;      /* Card internal padding */
+  --spacing-section-margin: 32px;     /* Section vertical margin */
+  --spacing-row-gap: 24px;           /* Row gap between items */
+  --spacing-col-gap: 24px;           /* Column gap between items */
+  --spacing-form-field: 24px;        /* Form field spacing */
+  --spacing-container-padding: 24px;  /* Container padding */
+  --spacing-container-margin: 32px;  /* Container margin */
+}
+
+/* Utility Classes */
+.bg-primary { background-color: var(--color-primary) !important; }
+.bg-secondary { background-color: var(--color-secondary) !important; }
+.bg-accent { background-color: var(--color-accent) !important; }
+.bg-highlight { background-color: var(--color-highlight) !important; }
+.bg-gradient-primary { background: var(--gradient-primary) !important; }
+.bg-gradient-accent { background: var(--gradient-accent) !important; }
+
+.text-primary { color: var(--color-primary) !important; }
+.text-secondary { color: var(--color-secondary) !important; }
+.text-accent { color: var(--color-accent) !important; }
+.text-highlight { color: var(--color-highlight) !important; }
+
+.border-primary { border-color: var(--color-primary) !important; }
+.border-secondary { border-color: var(--color-secondary) !important; }
+.border-accent { border-color: var(--color-accent) !important; }
+
+.shadow-primary { box-shadow: var(--shadow-md) !important; }
+.shadow-primary-lg { box-shadow: var(--shadow-lg) !important; }
+

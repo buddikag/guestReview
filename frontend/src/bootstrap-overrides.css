@@ -1,0 +1,373 @@
+/* Bootstrap Overrides with Custom Theme Colors */
+
+/* Body Background - Override Bootstrap */
+body {
+  background-color: var(--color-primary-dark) !important;
+}
+
+html {
+  background-color: var(--color-primary-dark) !important;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--text-light) !important;
+  transition: all var(--transition-base);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary) !important;
+  border-color: var(--color-secondary) !important;
+  color: var(--text-light) !important;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-secondary:active {
+  background-color: var(--color-secondary-hover) !important;
+  border-color: var(--color-secondary-hover) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-outline-primary {
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  background-color: transparent !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--text-light) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-outline-dark {
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  background-color: transparent !important;
+}
+
+.btn-outline-dark:hover,
+.btn-outline-dark:focus,
+.btn-outline-dark:active {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--text-light) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-dark {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--text-light) !important;
+}
+
+.btn-dark:hover,
+.btn-dark:focus,
+.btn-dark:active {
+  background-color: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Forms */
+.form-control:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(77, 43, 140, 0.25) !important;
+}
+
+.form-control {
+  border-color: var(--color-gray-300) !important;
+  transition: all var(--transition-fast);
+}
+
+.form-control:hover {
+  border-color: var(--color-primary-light) !important;
+}
+
+.form-label {
+  color: var(--color-primary) !important;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Navbar */
+.navbar {
+  box-shadow: var(--shadow-md);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--text-light) !important;
+  transition: all var(--transition-fast);
+}
+
+.navbar-brand:hover {
+  color: var(--color-highlight) !important;
+  transform: scale(1.05);
+}
+
+.nav-link {
+  color: var(--text-light) !important;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+  padding: 0.5rem 1rem !important;
+  border-radius: var(--radius-sm);
+  margin: 0 4px;
+}
+
+.nav-link:hover {
+  color: var(--color-highlight) !important;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Tables - Professional Styling */
+.table {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.table thead {
+  background: var(--gradient-primary);
+  color: var(--text-light);
+}
+
+.table thead th {
+  border: none;
+  padding: var(--spacing-md);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+}
+
+.table tbody td {
+  padding: var(--spacing-md);
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: all var(--transition-fast);
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-gray-100);
+  box-shadow: var(--shadow-sm);
+}
+
+.table-bordered {
+  border-color: var(--color-gray-300) !important;
+}
+
+.table-bordered thead th,
+.table-bordered tbody td {
+  border-color: var(--color-gray-300) !important;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: var(--color-gray-100);
+}
+
+/* Alerts */
+.alert-success {
+  background-color: rgba(40, 167, 69, 0.1);
+  border-color: #28A745;
+  color: #155724;
+}
+
+.alert-danger {
+  background-color: rgba(220, 53, 69, 0.1);
+  border-color: #DC3545;
+  color: #721c24;
+}
+
+.alert-warning {
+  background-color: rgba(238, 167, 39, 0.1);
+  border-color: var(--color-accent);
+  color: var(--color-accent-dark);
+}
+
+.alert-info {
+  background-color: rgba(77, 43, 140, 0.1);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Cards - Professional Light Gray Shadows */
+.card {
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-base);
+  padding: var(--spacing-card-padding);
+  background: var(--color-white);
+  margin-bottom: var(--spacing-lg);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+  border-color: var(--color-gray-300);
+}
+
+/* Card Body */
+.card-body {
+  padding: var(--spacing-card-padding);
+}
+
+/* Card Header */
+.card-header {
+  padding: var(--spacing-md) var(--spacing-card-padding);
+  background-color: var(--color-gray-100);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+/* Card Footer */
+.card-footer {
+  padding: var(--spacing-md) var(--spacing-card-padding);
+  background-color: var(--color-gray-100);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+/* Pagination */
+.pagination {
+  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.pagination .page-item {
+  margin: 0;
+}
+
+.pagination .page-link {
+  color: var(--text-light) !important;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  transition: all var(--transition-fast);
+  padding: 0.5rem 0.75rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.pagination .page-link:hover:not(:disabled) {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  color: var(--text-light) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--text-light) !important;
+  font-weight: 600;
+}
+
+.pagination .page-item.disabled .page-link {
+  background-color: var(--color-gray-400);
+  border-color: var(--color-gray-400);
+  color: var(--text-light) !important;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Input Groups */
+.input-group-text {
+  background-color: var(--color-gray-200);
+  border-color: var(--color-gray-300);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Badges */
+.badge-primary {
+  background-color: var(--color-primary);
+}
+
+.badge-secondary {
+  background-color: var(--color-secondary);
+}
+
+.badge-accent {
+  background-color: var(--color-accent);
+}
+
+/* Links */
+a {
+  color: var(--color-primary);
+  transition: all var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-secondary);
+}
+
+/* Backgrounds */
+.bg-light {
+  background-color: var(--color-gray-100) !important;
+}
+
+.bg-dark {
+  background-color: var(--color-primary) !important;
+}
+
+.bg-white {
+  background-color: var(--color-white) !important;
+}
+
+/* Text Colors */
+.text-dark {
+  color: var(--text-primary) !important;
+}
+
+.text-muted {
+  color: var(--text-secondary) !important;
+}
+
+/* Shadows */
+.shadow-sm {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.shadow {
+  box-shadow: var(--shadow-md) !important;
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Custom Utility Classes */
+.bg-gradient-primary {
+  background: var(--gradient-primary) !important;
+}
+
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
