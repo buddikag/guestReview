@@ -42,7 +42,7 @@ const AddGuest = () => {
       endDate,
       roomNumber,
     };
-    axios.post('http://localhost:3000/add', data)
+    axios.post(`${import.meta.env.VITE_API_URL}add`, data)
       .then(response => {
         setMessage(response.data['Message']);
         setName('');
@@ -53,6 +53,7 @@ const AddGuest = () => {
         setRoomNumber('');
         setError('');
         location.reload();
+        //GuestList.fetchGuests(1);
       })
         .catch(error => {
             console.log(error.response.data['Message']);

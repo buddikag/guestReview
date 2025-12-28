@@ -94,6 +94,7 @@ function GuestList() {
                 <span className="px-3 py-1">
                 {page} / {totalPages}
                 </span>
+                
 
                 <button
                 disabled={page === totalPages}
