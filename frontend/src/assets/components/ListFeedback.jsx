@@ -15,13 +15,30 @@ const ListFeedback = () => {
       <header className="bg-dark text-white w-100vw">
         <MainNavigation />
       </header>
-      <div className="container mt-4 mb-5">
+      <div className="container" style={{ 
+        marginTop: 'var(--spacing-section-margin)',
+        marginBottom: 'var(--spacing-lg)'
+      }}>
         <div className="bred-crumb">
-            <Link to="/" className="text-dark text-decoration-none">Home</Link> <span className="color-red">/ List Feedback</span>
+            <Link to="/" className="text-dark text-decoration-none" style={{ color: 'var(--color-primary)' }}>Home</Link> 
+            <span style={{ color: 'var(--color-secondary)', marginLeft: 'var(--spacing-sm)' }}>/ List Feedback</span>
         </div>
       </div>
-      <div className="container mt-4 mb-5">
-      <h2 className="text-center">List of all Feedback</h2>
+      <div className="container" style={{ 
+        marginTop: 'var(--spacing-lg)',
+        marginBottom: 'var(--spacing-section-margin)'
+      }}>
+      <h2 className="text-center" style={{ 
+        color: 'var(--color-primary)',
+        marginBottom: 'var(--spacing-xl)',
+        fontWeight: 700,
+        fontSize: '2.5rem'
+      }}>List of all Feedback</h2>
+      <div className="card" style={{
+        boxShadow: 'var(--shadow-card)',
+        padding: 'var(--spacing-card-padding)',
+        marginBottom: 'var(--spacing-section-margin)'
+      }}>
       <table className="table">
         <thead>
           <tr>
@@ -35,10 +52,11 @@ const ListFeedback = () => {
             return (
               <tr key={data.rating}>
                 <td>
-                  <span className="text-lg font-bold">{data.name}</span> <span className="text-sm">{data.rating} starts</span>
+                  <span className="text-lg font-bold" style={{ color: 'var(--color-primary)', fontSize: '1.1rem' }}>{data.name}</span> 
+                  <span className="text-sm" style={{ color: 'var(--color-accent)', marginLeft: '8px', fontWeight: 600 }}>{data.rating} stars</span>
                 </td>
                 <td>
-                  <span className="truncate">
+                  <span className="truncate" style={{ color: 'var(--text-primary)' }}>
                     {data.comment.substring(0, 50)}
                   </span>
                   {data.comment.length > 50 && (
@@ -46,26 +64,38 @@ const ListFeedback = () => {
                       e.preventDefault();
                       alert(data.comment);
                     }}>
-                      <span className="text-blue" style={{ color: "blue", cursor: "pointer", textDecoration: "underline", fontSize: "12px" }}> More</span>
+                      <span className="text-blue" style={{ 
+                        color: "var(--color-secondary)", 
+                        cursor: "pointer", 
+                        textDecoration: "underline", 
+                        fontSize: "14px",
+                        marginLeft: '8px',
+                        fontWeight: 600
+                      }}> More</span>
                     </span>
                   )}
                 </td> 
                 <td>
-                    <span className="text-lg font-bold">{'⭐'.repeat(data.rating)}</span>
+                    <span className="text-lg font-bold" style={{ 
+                      fontSize: '1.5rem',
+                      color: 'var(--color-accent)',
+                      filter: 'drop-shadow(0 2px 4px rgba(238, 167, 39, 0.3))'
+                    }}>{'⭐'.repeat(data.rating)}</span>
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
+      </div>
 
-      <div className="mt-4">
-      <nav className="flex justify-center mt-5">
+      <div style={{ marginTop: 'var(--spacing-xl)' }}>
+      <nav className="d-flex justify-content-center">
         <ul className="pagination">
           {[...Array(5)].map((v, i) => {
             return (
-              <li className="page-item text-black" key={i}>
-                <Link to={`/listfeedback/${i+1}`} className={`${i === 0 ? "bg-gray-900" : ""} px-3 py-2 rounded-md text-black`}>{i+1}</Link>
+              <li className="page-item" key={i}>
+                <Link to={`/listfeedback/${i+1}`} className={`page-link ${i === 0 ? "active" : ""}`}>{i+1}</Link>
               </li>
             );
           })}

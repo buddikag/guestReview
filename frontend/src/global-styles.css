@@ -1,0 +1,215 @@
+/* Global Styles for Guest Review System */
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-accent);
+  color: var(--text-light);
+}
+
+/* Focus Styles */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Breadcrumb Styling */
+.bred-crumb {
+  font-size: 0.95rem;
+  padding: var(--spacing-sm) 0;
+  margin-bottom: var(--spacing-md);
+}
+
+.bred-crumb a {
+  transition: all var(--transition-fast);
+}
+
+.bred-crumb a:hover {
+  text-decoration: underline !important;
+  color: var(--color-secondary) !important;
+}
+
+/* Container Improvements */
+.container {
+  max-width: 1200px;
+  padding-left: var(--spacing-container-padding);
+  padding-right: var(--spacing-container-padding);
+}
+
+/* Card Enhancements */
+.card {
+  border: none;
+  overflow: hidden;
+}
+
+/* Table Enhancements */
+.table-responsive {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* Button Enhancements */
+.btn {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.75rem 1.5rem;
+  transition: all var(--transition-base);
+  border-radius: var(--radius-md);
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+/* Form Enhancements - Industry Standard Spacing */
+.form-group {
+  margin-bottom: var(--spacing-form-field);
+}
+
+.form-group label {
+  margin-bottom: var(--spacing-sm);
+  display: block;
+}
+
+/* Add Guest Form - Reduced Field Spacing */
+.add-guest-form .form-group {
+  margin-bottom: 30px !important;
+}
+
+/* Add Guest Form - Remove Row Bottom Margin */
+.add-guest-form .row {
+  margin-bottom: 0 !important;
+}
+
+/* Row and Column Spacing - Industry Standards */
+.row {
+  margin-left: calc(-1 * var(--spacing-col-gap) / 2);
+  margin-right: calc(-1 * var(--spacing-col-gap) / 2);
+  margin-bottom: var(--spacing-row-gap);
+}
+
+.row > * {
+  padding-left: calc(var(--spacing-col-gap) / 2);
+  padding-right: calc(var(--spacing-col-gap) / 2);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Container Spacing */
+.container,
+.container-fluid {
+  padding-left: var(--spacing-container-padding);
+  padding-right: var(--spacing-container-padding);
+}
+
+.container {
+  margin-top: var(--spacing-section-margin);
+  margin-bottom: var(--spacing-section-margin);
+}
+
+/* Input Enhancements */
+input[type="date"] {
+  color-scheme: light;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.5) sepia(1) saturate(5) hue-rotate(250deg);
+}
+
+/* Phone Input Styling */
+.PhoneInput {
+  border: 2px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  padding: 0.5rem;
+  transition: all var(--transition-fast);
+}
+
+.PhoneInput:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 0.2rem rgba(77, 43, 140, 0.25);
+}
+
+.PhoneInputInput {
+  border: none;
+  outline: none;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+/* Loading States */
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-base);
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem !important;
+  }
+  
+  h2 {
+    font-size: 1.75rem !important;
+  }
+  
+  .btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .navbar,
+  .btn,
+  footer {
+    display: none !important;
+  }
+}
+

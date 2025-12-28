@@ -65,13 +65,25 @@ const AddGuest = () => {
       <header className="bg-dark text-white w-100vw">
         <MainNavigation />
       </header>
-      <div className="container mt-4 mb-5">
+      <div className="container" style={{ 
+        marginTop: 'var(--spacing-section-margin)',
+        marginBottom: 'var(--spacing-lg)'
+      }}>
         <div className="bred-crumb">
-            <Link to="/" className="text-dark text-decoration-none">Home</Link> <span className="color-red">/ Add Guest</span>
+            <Link to="/" className="text-dark text-decoration-none" style={{ color: 'var(--color-primary)' }}>Home</Link> 
+            <span style={{ color: 'var(--color-secondary)', marginLeft: 'var(--spacing-sm)' }}>/ Add Guest</span>
         </div>
       </div>
-      <div className="container mt-4 mb-5">
-      <form onSubmit={handleSubmit}>
+      <div className="container" style={{ 
+        marginTop: 'var(--spacing-lg)',
+        marginBottom: 'var(--spacing-section-margin)'
+      }}>
+      <div className="card" style={{
+        boxShadow: 'var(--shadow-card)',
+        padding: 'var(--spacing-card-padding)',
+        marginBottom: 'var(--spacing-section-margin)'
+      }}>
+      <form onSubmit={handleSubmit} className="add-guest-form">
         <div className="row">
           <div className="col-sm-6">
             <div className="form-group">
@@ -84,7 +96,7 @@ const AddGuest = () => {
               />
             </div>
           </div>
-          <div style={{ maxWidth: '100%', marginTop: '25px' }} className="col-sm-6">
+          <div className="col-sm-6">
             <PhoneInput
               style={{ maxWidth: '100%' }}
               defaultCountry="LK"
@@ -93,7 +105,7 @@ const AddGuest = () => {
               onChange={setPhone}
             />
 
-            {errorphone && <p style={{ color: "red" }}>{errorphone}</p>}
+            {errorphone && <p style={{ color: "var(--color-danger)", marginTop: "8px", fontWeight: 500 }}>{errorphone}</p>}
 
             {/* <button onClick={validatePhone}>Submit</button> */}
           </div>
@@ -117,15 +129,17 @@ const AddGuest = () => {
               <div className="input-group">
                 <input
                   type="date"
-                  style={{ backgroundColor: "darkslategrey", color: "white" }}
                   className="form-control"
                   value={startDate}
                   onChange={(event) => setStartDate(event.target.value)}
                 />
-                <span className="input-group-text">to</span>
+                <span className="input-group-text" style={{ 
+                  background: 'var(--color-primary)', 
+                  color: 'var(--text-light)',
+                  fontWeight: 600
+                }}>to</span>
                 <input
                   type="date"
-                  style={{ backgroundColor: "darkslategrey", color: "white" }}
                   className="form-control"
                   value={endDate}
                   onChange={(event) => setEndDate(event.target.value)}
@@ -149,22 +163,28 @@ const AddGuest = () => {
         </div>
         <div className="row">
             <div className="col-sm-6">
-            <div className="form-group mt-3">
+            <div className="form-group" style={{ marginTop: 'var(--spacing-lg)' }}>
             <button className="btn btn-primary">Add Guest</button>
             </div>
             </div>
             <div className="col-sm-6">
-            <div className="form-group mt-3">
-            {error && <div className="alert alert-danger mt-3" role="alert">{error}</div>}
-            {message && <div className="alert alert-success mt-3" role="alert">{message}</div>}
+            <div className="form-group" style={{ marginTop: 'var(--spacing-lg)' }}>
+            {error && <div className="alert alert-danger" role="alert" style={{ marginTop: 'var(--spacing-md)' }}>{error}</div>}
+            {message && <div className="alert alert-success" role="alert" style={{ marginTop: 'var(--spacing-md)' }}>{message}</div>}
             </div>            
             </div>
         </div>
       </form>
+      </div>
       <GuestList />
       </div>
-      <footer className="bg-dark text-white p-3">
-        <p>&copy; 2025</p>
+      <footer className="bg-dark text-white" style={{ 
+        background: 'var(--color-primary)',
+        marginTop: 'var(--spacing-3xl)',
+        padding: 'var(--spacing-xl)',
+        textAlign: 'center'
+      }}>
+        <p style={{ margin: 0, color: 'var(--text-light)' }}>&copy; 2025 Guest Review System</p>
       </footer>
     </div>
   );

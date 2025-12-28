@@ -7,6 +7,7 @@ import WtNotification from "./assets/components/WtNotification.jsx";
 import SimpleWtStar from "./assets/components/surveys/SimpleWtStar.jsx";
 import ListFeedback from "./assets/components/ListFeedback.jsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import './bootstrap-overrides.css';
 
 function App() {
 
