@@ -7,7 +7,7 @@
 
   color-scheme: light;
   color: var(--text-primary);
-  background-color: var(--color-gray-100);
+  background-color: var(--color-primary-dark);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -33,7 +33,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: var(--color-gray-100);
+  background-color: var(--color-primary-dark) !important;
 }
 
 h1, h2, h3, h4, h5, h6 {

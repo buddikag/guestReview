@@ -1,5 +1,14 @@
 /* Global Styles for Guest Review System */
 
+/* Body Background - Override all other styles */
+body {
+  background-color: var(--color-primary-dark) !important;
+}
+
+html {
+  background-color: var(--color-primary-dark) !important;
+}
+
 /* Smooth Scrolling */
 html {
   scroll-behavior: smooth;

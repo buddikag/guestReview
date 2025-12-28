@@ -1,5 +1,14 @@
 /* Bootstrap Overrides with Custom Theme Colors */
 
+/* Body Background - Override Bootstrap */
+body {
+  background-color: var(--color-primary-dark) !important;
+}
+
+html {
+  background-color: var(--color-primary-dark) !important;
+}
+
 /* Buttons */
 .btn-primary {
   background-color: var(--color-primary) !important;
