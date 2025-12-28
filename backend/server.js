@@ -48,7 +48,7 @@ app.get("/", (req, res) => {
     if (countErr) return res.status(500).json({ Message: countErr });
     const totalRecords = countResult[0].count;
     const totalPages = Math.ceil(totalRecords / limit);
-      const query = "SELECT * FROM guest WHERE status = 1 ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?";
+      const query = "SELECT * FROM guest WHERE status = 1 ORDER BY id DESC LIMIT ? OFFSET ?";
     connection.query(query, [limit, offset], (err, result) => {
       if (err) return res.status(500).json({ Message: err });
       return res.json({ data: result, totalRecords, totalPages });

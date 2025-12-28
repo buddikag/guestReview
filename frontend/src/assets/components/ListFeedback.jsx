@@ -28,12 +28,6 @@ const ListFeedback = () => {
         marginTop: 'var(--spacing-lg)',
         marginBottom: 'var(--spacing-section-margin)'
       }}>
-      <h2 className="text-center" style={{ 
-        color: 'var(--color-primary)',
-        marginBottom: 'var(--spacing-xl)',
-        fontWeight: 700,
-        fontSize: '2.5rem'
-      }}>List of all Feedback</h2>
       <div className="card" style={{
         boxShadow: 'var(--shadow-card)',
         padding: 'var(--spacing-card-padding)',
