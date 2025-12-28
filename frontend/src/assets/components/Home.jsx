@@ -72,17 +72,19 @@ const Home = () => {
                     fontSize: '1.25rem',
                     color: '#FFFFFF',
                     marginBottom: '2rem',
-                    opacity: 0.95
-                }}>Manage your guests efficiently and effortlessly.</p>
+                    opacity: 0.95,
+                    fontWeight: 100
+                }}>Manage your guests review efficiently and effortlessly.</p>
                 
-                <Link to="/createGuest" className="btn btn-primary btn-lg" style={{
+                <Link to="/createGuest" className="btn btn-primary btn-lg add-guest-btn-home" style={{
                     padding: '1rem 2.5rem',
                     fontSize: '1.1rem',
                     fontWeight: 600,
                     borderRadius: 'var(--radius-md)',
                     boxShadow: 'var(--shadow-lg)',
                     textTransform: 'uppercase',
-                    letterSpacing: '1px'
+                    letterSpacing: '1px',
+                    border: '1px solid #212529'
                 }}>Add New Guest</Link>
             </div>
         </div>

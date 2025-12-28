@@ -111,6 +111,11 @@ html {
   margin-bottom: 0 !important;
 }
 
+/* Home Page - Add New Guest Button */
+.add-guest-btn-home {
+  color: #000000 !important;
+}
+
 /* Row and Column Spacing - Industry Standards */
 .row {
   margin-left: calc(-1 * var(--spacing-col-gap) / 2);
