@@ -80,13 +80,13 @@ router.get('/getReview/:id', (req, res) => {
 });
 
 router.post('/add', (req, res) => {
-    const { rating, comment, guestid } = req.body;
+    const { rating, comment, guestid, nickname } = req.body;
     // Check if rating and comment are provided
     if (!rating || !comment || !guestid) {
         return res.status(400).json({ Message: "Rating, comment, are required" });
     }
-    const query = "INSERT INTO simplewtstar (rating, comment, guest_id) VALUES (?, ?, ?)";
-    connection.query(query, [rating, comment, guestid], (err, result) => {
+    const query = "INSERT INTO simplewtstar (rating, comment, nickname, guest_id) VALUES (?, ?, ?, ?)";
+    connection.query(query, [rating, comment, nickname, guestid], (err, result) => {
         if (err) return res.status(500).json({ Message: err });
         return res.json({ Message: "Your Review has been submitted." });
     });
@@ -127,9 +127,9 @@ router.delete('/delete/:id', (req, res) => {
 // update review
 router.put('/update/:id', (req, res) => {
     const feedbackId = req.params.id;
-    const { rating, comment } = req.body;
-    const query = "UPDATE simplewtstar SET rating = ?, comment = ? WHERE id = ?";
-    connection.query(query, [rating, comment, feedbackId], (err, result) => {
+    const { rating, comment ,nickname} = req.body;
+    const query = "UPDATE simplewtstar SET rating = ?, comment = ?, nickname = ? WHERE id = ?";
+    connection.query(query, [rating, comment, nickname, feedbackId], (err, result) => {
         if (err) return res.status(500).json({ Message: err });
         if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
         return res.json({ Message: "Review updated successfully" });

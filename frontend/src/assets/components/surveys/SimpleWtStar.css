@@ -107,6 +107,39 @@
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(77, 43, 140, 0.1);
 }
+/* nickname-section */
+.nickname-section {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+} 
+
+.nickname-section label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-primary);
+  font-size: 15px;
+  width: 100%;
+}
+
+.nickname-section input {
+  width: 100%;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-gray-300);
+  font-size: 14px;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+  color: var(--text-primary);
+}
+
+.nickname-section input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(77, 43, 140, 0.1);
+}
+
 
 button {
   width: 100%;

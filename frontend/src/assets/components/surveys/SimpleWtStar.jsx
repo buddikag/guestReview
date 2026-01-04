@@ -8,6 +8,7 @@ import e from "cors";
 const SimpleWtStar = (props) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [nickname, setNickname] = useState("");
   const [preReviews, setpreReviews] = useState([]);
   const [submtStatus, setsubmtStatus] = useState(false);
   const [reviewResponse, setReviewResponse] = useState([]);
@@ -37,7 +38,6 @@ const SimpleWtStar = (props) => {
   }, []);
   useEffect(() => {
   if (guestId) {
-   console.log("guest hear");
     init(guestId, hotelId);
   }
 }, [guestId]);
@@ -70,7 +70,8 @@ const SimpleWtStar = (props) => {
     const feedbackData = {
       rating,
       comment,
-      guestid: guestId
+      guestid: guestId,
+      nickname: nickname
     };
     axios.post(`${import.meta.env.VITE_API_URL}simplewtstar/add`, feedbackData)
       .then((response) => {
@@ -100,6 +101,7 @@ const SimpleWtStar = (props) => {
         setRating(response.data[0].rating);
         setComment(response.data[0].comment);
         setReviewId(response.data[0].id);
+        setNickname(response.data[0].nickname);
         seteditmode(true);
       })
       .catch((error) => console.log(error));
@@ -114,7 +116,9 @@ const SimpleWtStar = (props) => {
     const feedbackData = {
       rating,
       comment,
-      guestid: window.location.pathname.split("/").pop()
+      nickname,
+      guestid: guestId
+      // guestid: window.location.pathname.split("/").pop()
     };
     axios.put(`${import.meta.env.VITE_API_URL}simplewtstar/update/${reviewId}`, feedbackData)
       .then((response) => {
@@ -163,6 +167,21 @@ const SimpleWtStar = (props) => {
         <div className="divider">
           <hr />
         </div>
+        {/* nickname */}
+        <div className="nickname-section">
+          <label>Nickname (optional)</label>
+
+          <input
+            className="nickname-input"
+            type="text"
+            placeholder="Enter your nickname..."
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+          />
+        </div>
+        <div className="divider">
+          <hr />
+        </div> 
         {/* Predefined reviews */}
 
         <div class="container">
