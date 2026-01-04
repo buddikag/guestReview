@@ -5,6 +5,7 @@ function GuestList() {
     const [getData, setData] = useState([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    //const SECRET = process.env.JWT_SECRET || "gss_2026_@";
     // useEffect(() => {
     //     axios.get(import.meta.env.VITE_API_URL,Headers={'Access-Control-Allow-Origin':'*'})
     //         .then(response => setData(response.data))
@@ -31,12 +32,6 @@ function GuestList() {
             })
             .catch(error => console.log(error));
     }
-    const copyFeedbakLink = (id) => {
-        const feedbackLink = import.meta.env.VITE_BASE_URL + `simplewtstar/${id}`;
-        navigator.clipboard.writeText(feedbackLink);
-        alert('Feedback link copied to clipboard!');
-    } 
-
     //
     const sendWhatsAppMessage = (id,phone_number) => {
         console.log(phone_number);
@@ -46,6 +41,24 @@ function GuestList() {
 
         window.open(url, "_blank");
     };  
+//  copy feedback link
+    const copyFeedbakLink = async (userid) => {
+        const res = await axios.post(
+            `${import.meta.env.VITE_API_URL}simplewtstar/generateReviewToken`,
+            {
+            userId: userid,
+            hotelId: 1,
+            }
+        );
+        const token = res.data;
+
+        const feedbackLink =
+            `${import.meta.env.VITE_BASE_URL}simplewtstar/review?token=${token}`;
+
+        await navigator.clipboard.writeText(feedbackLink);
+        alert("Feedback link copied!");
+    };
+
     return (
         <div className="bg-white rounded" style={{
             padding: 'var(--spacing-card-padding)',

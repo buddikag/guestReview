@@ -8,6 +8,7 @@ import SimpleWtStar from "./assets/components/surveys/SimpleWtStar.jsx";
 import ListFeedback from "./assets/components/ListFeedback.jsx";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './bootstrap-overrides.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 function App() {
 
@@ -18,7 +19,7 @@ function App() {
             <Route path="/createGuest" element={<AddGuest />} />
             <Route path="/updateGuest/:guestid" element={<UpdateGuest/>} />
             <Route path="/wtnotification" element={<WtNotification/>} />
-            <Route path="/simplewtstar/:guestid" element={<SimpleWtStar/>} />
+            <Route path="/simplewtstar/review" element={<SimpleWtStar/>} />
             <Route path="/listfeedback" element={<ListFeedback/>} />
         </Routes>
     </BrowserRouter>

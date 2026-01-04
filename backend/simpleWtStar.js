@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import mysql from 'mysql2';
+import jwt from "jsonwebtoken";
+
 const router = Router();
+//const SECRET = process.env.JWT_SECRET;
+const SECRET = process.env.JWT_SECRET || "gss_2026_@";
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -8,12 +12,25 @@ const connection = mysql.createConnection({
   password: "",
   database: "gss",
 });
-// const connection = mysql.createConnection({
-//   host: "localhost",
-//   user: "u668410136_user",
-//   password: "spaceX25@",
-//   database: "u668410136_gss"
-// });
+
+ router.post('/generateReviewToken', (req, res) => {
+  const userId = req.body.userId;
+  const hotelId = req.body.hotelId;
+
+  return res.json(jwt.sign({ user_id: userId, hotel_id: hotelId }, SECRET, { expiresIn: "7d" }));
+});
+
+// decode token and get user data
+ router.get('/getUserData/:token', (req, res) => {
+     const token = req.params.token;
+     console.log(token);
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    res.json(decoded);
+  } catch {
+    res.status(401).json({ message: "Invalid token" });
+  }
+ })
 
 // Define a GET route relative to the mount path (e.g., the final path is /users/)
 // router.get('/', (req, res) => {
@@ -44,6 +61,24 @@ router.get('/', (req, res) => {
     });
 });
 
+router.get('/getPreReviews', (req, res) => {
+    const query = "SELECT * FROM pre_defined_review WHERE status = 1";
+    connection.query(query, (err, result) => {
+        if (err) return res.status(500).json({ Message: err });
+        return res.json(result);
+    });
+});
+
+router.get('/getReview/:id', (req, res) => {
+    const id = req.params.id;
+    const query = "SELECT * FROM simplewtstar WHERE guest_id = ?";
+    connection.query(query, [id], (err, result) => {
+        if (err) return res.status(500).json({ Message: err });
+        if (result.length === 0) return res.status(404).json({ Message: "Feedback not found" });
+        return res.json(result);
+    });
+});
+
 router.post('/add', (req, res) => {
     const { rating, comment, guestid } = req.body;
     // Check if rating and comment are provided
@@ -53,7 +88,7 @@ router.post('/add', (req, res) => {
     const query = "INSERT INTO simplewtstar (rating, comment, guest_id) VALUES (?, ?, ?)";
     connection.query(query, [rating, comment, guestid], (err, result) => {
         if (err) return res.status(500).json({ Message: err });
-        return res.json({ Message: "Feedback added successfully" });
+        return res.json({ Message: "Your Review has been submitted." });
     });
 });
 router.put('/reply/:id', (req, res) => {
@@ -63,7 +98,7 @@ router.put('/reply/:id', (req, res) => {
     connection.query(query, [replytext, feedbackId], (err, result) => {
         if (err) return res.status(500).json({ Message: err });
         if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
-        return res.json({ Message: "Feedback updated successfully" });
+        return res.json({ Message: "Review updated successfully" });
     });
 
 });
@@ -74,7 +109,7 @@ router.put('/state/:id', (req, res) => {
     connection.query(query, [state, feedbackId], (err, result) => {
         if (err) return res.status(500).json({ Message: err });
         if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
-        return res.json({ Message: "Feedback updated successfully" });
+        return res.json({ Message: "Review updated successfully" });
     });
 
 });
@@ -85,9 +120,20 @@ router.delete('/delete/:id', (req, res) => {
     connection.query(query, [feedbackId], (err, result) => {
         if (err) return res.status(500).json({ Message: err });
         if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
-        return res.json({ Message: "Feedback deleted successfully" });
+        return res.json({ Message: "Review deleted successfully" });
     });
 });
 
+// update review
+router.put('/update/:id', (req, res) => {
+    const feedbackId = req.params.id;
+    const { rating, comment } = req.body;
+    const query = "UPDATE simplewtstar SET rating = ?, comment = ? WHERE id = ?";
+    connection.query(query, [rating, comment, feedbackId], (err, result) => {
+        if (err) return res.status(500).json({ Message: err });
+        if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
+        return res.json({ Message: "Review updated successfully" });
+    });
+});
 // Export the router for use in the main app file
 export default router;
