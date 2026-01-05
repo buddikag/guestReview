@@ -1,0 +1,20 @@
+.hotel-checkboxes {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.hotel-checkboxes .form-check {
+  margin-bottom: 8px;
+}
+
+.hotel-checkboxes .form-check:last-child {
+  margin-bottom: 0;
+}
+
+.modal.show {
+  display: block;
+}
+

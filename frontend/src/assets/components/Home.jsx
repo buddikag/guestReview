@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import MainNavigation from "./MainNavigation";
 
 const Home = () => {
 
@@ -13,7 +14,7 @@ const Home = () => {
     }, []);
 
     const handleDelete = (id) => {
-        axios.delete(`http://localhost:3000/delete/${id}`)
+        axios.put(`http://localhost:3000/delete/${id}`)
             .then(response => {
                 location.reload();
             })
@@ -21,7 +22,9 @@ const Home = () => {
     }
 
     return (
-        <div className="d-flex flex-column vh-100 justify-content-center align-items-center" style={{ 
+        <div>
+            <MainNavigation />
+            <div className="d-flex flex-column vh-100 justify-content-center align-items-center" style={{ 
             background: 'radial-gradient(circle, rgb(97 61 163) 0%, rgb(60 16 114) 50%, rgb(22 1 36) 100%)',
             position: 'relative',
             overflow: 'hidden',
@@ -87,6 +90,7 @@ const Home = () => {
                     border: '1px solid #212529'
                 }}>Add New Guest</Link>
             </div>
+        </div>
         </div>
     );
 }

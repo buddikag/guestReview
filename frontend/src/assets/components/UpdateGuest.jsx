@@ -16,6 +16,7 @@ const UpdateGuest = (props) => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [roomNumber, setRoomNumber] = useState('');
+    const [hotelName, setHotelName] = useState('');
 
   const [phoneno, setPhoneno] = useState("");
   const [errorphone, setErrorphone] = useState("");
@@ -39,8 +40,16 @@ const UpdateGuest = (props) => {
         setStartDate(response.data.startDate);
         setEndDate(response.data.endDate);
         setRoomNumber(response.data.roomNumber);
+        setHotelName(response.data.hotel_name || 'N/A');
       })
-      .catch(error => console.log(error));
+      .catch(error => {
+        console.log(error);
+        if (error.response?.status === 403) {
+          setError('Access denied to this guest');
+        } else if (error.response?.status === 404) {
+          setError('Guest not found');
+        }
+      });
   }, []);
 
   const handleSubmit = (event) => {
@@ -161,6 +170,19 @@ const UpdateGuest = (props) => {
                 value={roomNumber}
                 onChange={(event) => setRoomNumber(event.target.value)}
               />
+            </div>
+          </div>
+          <div className="col-sm-6 mt-3">
+            <div className="form-group">
+              <label>Hotel</label>
+              <input
+                type="text"
+                className="form-control"
+                value={hotelName}
+                disabled
+                style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+              />
+              <small className="text-muted">Hotel cannot be changed</small>
             </div>
           </div>
         </div>

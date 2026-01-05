@@ -6,8 +6,10 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import GuestList from "./GuestList.jsx";
 import MainNavigation from "./MainNavigation.jsx";
+import { useAuth } from "../../contexts/AuthContext";
 
 const AddGuest = () => {
+  const { user } = useAuth();
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [name, setName] = useState('');
@@ -16,9 +18,28 @@ const AddGuest = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [roomNumber, setRoomNumber] = useState('');
+  const [hotelId, setHotelId] = useState('');
+  const [hotels, setHotels] = useState([]);
 
   const [phoneno, setPhoneno] = useState("");
   const [errorphone, setErrorphone] = useState("");
+
+  useEffect(() => {
+    // Fetch user's hotels
+    const fetchHotels = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/hotels');
+        setHotels(response.data);
+        // Auto-select first hotel if only one
+        if (response.data.length === 1) {
+          setHotelId(response.data[0].id.toString());
+        }
+      } catch (error) {
+        console.error('Error fetching hotels:', error);
+      }
+    };
+    fetchHotels();
+  }, []);
 
   const validatePhone = () => {
     if (!phone || !isValidPhoneNumber(phone)) {
@@ -34,6 +55,12 @@ const AddGuest = () => {
     setMessage('');
     event.preventDefault();
     validatePhone();
+    
+    if (!hotelId) {
+      setError('Please select a hotel');
+      return;
+    }
+    
     const data = {
       name,
       phone,
@@ -41,6 +68,7 @@ const AddGuest = () => {
       startDate,
       endDate,
       roomNumber,
+      hotelId: parseInt(hotelId),
     };
     axios.post(`${import.meta.env.VITE_API_URL}add`, data)
       .then(response => {
@@ -51,6 +79,7 @@ const AddGuest = () => {
         setStartDate('');
         setEndDate('');
         setRoomNumber('');
+        setHotelId(hotels.length === 1 ? hotels[0].id.toString() : '');
         setError('');
         location.reload();
         //GuestList.fetchGuests(1);
@@ -159,6 +188,24 @@ const AddGuest = () => {
                 value={roomNumber}
                 onChange={(event) => setRoomNumber(event.target.value)}
               />
+            </div>
+          </div>
+          <div className="col-sm-6">
+            <div className="form-group">
+              <label>Hotel <span style={{ color: 'red' }}>*</span></label>
+              <select
+                className="form-control"
+                value={hotelId}
+                onChange={(event) => setHotelId(event.target.value)}
+                required
+              >
+                <option value="">Select a hotel</option>
+                {hotels.map((hotel) => (
+                  <option key={hotel.id} value={hotel.id}>
+                    {hotel.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

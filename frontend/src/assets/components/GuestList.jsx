@@ -42,12 +42,12 @@ function GuestList() {
         window.open(url, "_blank");
     };  
 //  copy feedback link
-    const copyFeedbakLink = async (userid) => {
+    const copyFeedbakLink = async (userid, hotelId) => {
         const res = await axios.post(
             `${import.meta.env.VITE_API_URL}simplewtstar/generateReviewToken`,
             {
             userId: userid,
-            hotelId: 1,
+            hotelId: hotelId || 1,
             }
         );
         const token = res.data;
@@ -74,6 +74,7 @@ function GuestList() {
                         <th>ID</th>
                         <th>Name</th>
                         <th>Email</th>
+                        <th>Hotel</th>
                         <th>Send Link</th>
                         <th>Action</th>
                     </tr>
@@ -85,9 +86,10 @@ function GuestList() {
                                 <td>{data.id}</td>
                                 <td>{data.name}</td>
                                 <td>{data.email}</td>
+                                <td>{data.hotel_name || 'N/A'}</td>
                                 <td>
-                                    <Link onClick={() => copyFeedbakLink(data.id)} className="btn btn-outline-dark btn-sm mx-2">Copy Link</Link>
-                                    <Link onClick={() => copyFeedbakLink(data.id)} className="btn btn-outline-dark btn-sm mx-2">Mail</Link>
+                                    <Link onClick={() => copyFeedbakLink(data.id, data.hotel_id)} className="btn btn-outline-dark btn-sm mx-2">Copy Link</Link>
+                                    <Link onClick={() => copyFeedbakLink(data.id, data.hotel_id)} className="btn btn-outline-dark btn-sm mx-2">Mail</Link>
                                     <Link onClick={() => sendWhatsAppMessage(data.id,data.phone)} className="btn btn-outline-dark btn-sm mx-2">Whatsapp</Link>                                   
                                 </td>
                                 <td>

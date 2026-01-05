@@ -18,13 +18,20 @@ const ListFeedback = () => {
   //     .catch(error => console.log(error));
   // }, []);
     const fetchGuests = async (pageNumber) => {
-        const res = await axios.get(
-        import.meta.env.VITE_API_URL + `simplewtstar?page=${pageNumber}&limit=5`,
-        { headers: { 'Access-Control-Allow-Origin': '*' } }
-        //`http://localhost:5000/users?page=${pageNumber}&limit=5`
-        );
-        setFeedbacks(res.data.data);
-        setTotalPages(res.data.totalPages);
+        try {
+            const res = await axios.get(
+            import.meta.env.VITE_API_URL + `simplewtstar?page=${pageNumber}&limit=5`,
+            { headers: { 'Access-Control-Allow-Origin': '*' } }
+            );
+            setFeedbacks(res.data.data);
+            setTotalPages(res.data.totalPages);
+        } catch (error) {
+            console.error('Error fetching feedbacks:', error);
+            if (error.response?.status === 401 || error.response?.status === 403) {
+                // Handle authentication/authorization errors
+                setFeedbacks([]);
+            }
+        }
     };
 
     useEffect(() => {
@@ -111,6 +118,7 @@ const ListFeedback = () => {
         <thead>
           <tr>
             <th>Guest Name</th>
+            <th>Hotel</th>
             <th>Feedback</th>
             <th>Rating</th>
             <th>Action</th>
@@ -119,10 +127,15 @@ const ListFeedback = () => {
         <tbody>
           {feedbacks.map((data, index) => {
             return (
-              <tr key={data.rating}>
+              <tr key={data.id || data.rating}>
                 <td>
                   <span className="text-lg font-bold" style={{ color: 'var(--color-primary)', fontSize: '1.1rem' }}>{data.name}</span> 
                   <span className="text-sm" style={{ color: 'var(--color-accent)', marginLeft: '8px', fontWeight: 600 }}>{data.rating} stars</span>
+                </td>
+                <td>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    {data.hotel_name || 'N/A'}
+                  </span>
                 </td>
                 <td className="max-w-xs truncate ...">
                   <span className="truncate" style={{ color: 'var(--text-primary)' }}>
