@@ -1,24 +1,24 @@
 import { Router } from 'express';
 import jwt from "jsonwebtoken";
-import { connection } from './config/database.js';
+import pool from './config/database.js';
 import { authenticateToken } from './middleware/auth.js';
 
 const router = Router();
 const SECRET = process.env.JWT_SECRET || "gss_2026_@";
 
 // Helper function to get user's hotel IDs
-const getUserHotelIds = (userId, role, callback) => {
+const getUserHotelIds = async (userId, role) => {
   if (role === 'super_admin') {
     // Super admin can see all hotels
-    return callback(null, null);
+    return null;
   }
   
-  const query = 'SELECT hotel_id FROM user_hotels WHERE user_id = ?';
-  connection.query(query, [userId], (err, results) => {
-    if (err) return callback(err, null);
-    const hotelIds = results.map(r => r.hotel_id);
-    callback(null, hotelIds);
-  });
+  try {
+    const [results] = await pool.execute('SELECT hotel_id FROM user_hotels WHERE user_id = ?', [userId]);
+    return results.map(r => r.hotel_id);
+  } catch (err) {
+    throw err;
+  }
 };
 
  router.post('/generateReviewToken', (req, res) => {
@@ -51,15 +51,15 @@ const getUserHotelIds = (userId, role, callback) => {
 //   const userId = req.params.id; // Access request parameters
 //   res.send(`User ID: ${userId} from separate file.`);
 // });
-router.get('/', authenticateToken, (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 5;
-  const offset = (page - 1) * limit;
-  const userId = req.user.id;
-  const userRole = req.user.role;
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const offset = (page - 1) * limit;
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
-  getUserHotelIds(userId, userRole, (err, hotelIds) => {
-    if (err) return res.status(500).json({ Message: 'Database error' });
+    const hotelIds = await getUserHotelIds(userId, userRole);
 
     let countQuery, query;
     let countParams = [];
@@ -108,91 +108,92 @@ router.get('/', authenticateToken, (req, res) => {
       queryParams = [...hotelIds, limit, offset];
     }
 
-    connection.query(countQuery, countParams, (countErr, countResult) => {
-      if (countErr) return res.status(500).json({ Message: countErr });
-      const totalRecords = countResult[0].count;
-      const totalPages = Math.ceil(totalRecords / limit);
-      
-      connection.query(query, queryParams, (err, result) => {
-        if (err) return res.status(500).json({ Message: err });
-        return res.json({ data: result, totalRecords, totalPages });
-      });
-    });
-  });
+    const [countResult] = await pool.execute(countQuery, countParams);
+    const totalRecords = countResult[0].count;
+    const totalPages = Math.ceil(totalRecords / limit);
+    
+    const [result] = await pool.execute(query, queryParams);
+    return res.json({ data: result, totalRecords, totalPages });
+  } catch (err) {
+    return res.status(500).json({ Message: 'Database error' });
+  }
 });
 
-router.get('/getPreReviews', (req, res) => {
-    const query = "SELECT * FROM pre_defined_review WHERE status = 1";
-    connection.query(query, (err, result) => {
-        if (err) return res.status(500).json({ Message: err });
+router.get('/getPreReviews', async (req, res) => {
+    try {
+        const query = "SELECT * FROM pre_defined_review WHERE status = 1";
+        const [result] = await pool.execute(query);
         return res.json(result);
-    });
+    } catch (err) {
+        return res.status(500).json({ Message: 'Database error' });
+    }
 });
 
-router.get('/getReview/:id', authenticateToken, (req, res) => {
-    const id = req.params.id;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+router.get('/getReview/:id', authenticateToken, async (req, res) => {
+    try {
+        const id = req.params.id;
+        const userId = req.user.id;
+        const userRole = req.user.role;
 
-    getUserHotelIds(userId, userRole, (err, hotelIds) => {
-      if (err) return res.status(500).json({ Message: 'Database error' });
+        const hotelIds = await getUserHotelIds(userId, userRole);
 
-      let query = `
-        SELECT sws.*, g.hotel_id 
-        FROM simplewtstar sws 
-        JOIN guest g ON sws.guest_id = g.id 
-        WHERE sws.guest_id = ?
-      `;
-      let queryParams = [id];
+        let query = `
+          SELECT sws.*, g.hotel_id 
+          FROM simplewtstar sws 
+          JOIN guest g ON sws.guest_id = g.id 
+          WHERE sws.guest_id = ?
+        `;
+        let queryParams = [id];
 
-      if (userRole !== 'super_admin') {
-        if (!hotelIds || hotelIds.length === 0) {
-          return res.status(403).json({ Message: 'Access denied' });
+        if (userRole !== 'super_admin') {
+          if (!hotelIds || hotelIds.length === 0) {
+            return res.status(403).json({ Message: 'Access denied' });
+          }
+          const placeholders = hotelIds.map(() => '?').join(',');
+          query += ` AND g.hotel_id IN (${placeholders})`;
+          queryParams = [id, ...hotelIds];
         }
-        const placeholders = hotelIds.map(() => '?').join(',');
-        query += ` AND g.hotel_id IN (${placeholders})`;
-        queryParams = [id, ...hotelIds];
-      }
 
-      connection.query(query, queryParams, (err, result) => {
-        if (err) return res.status(500).json({ Message: err });
+        const [result] = await pool.execute(query, queryParams);
         if (result.length === 0) return res.status(404).json({ Message: "Feedback not found" });
         return res.json(result);
-      });
-    });
-});
-
-router.post('/add', (req, res) => {
-    const { rating, comment, guestid, nickname } = req.body;
-    // Check if rating and comment are provided
-    if (!rating || !comment || !guestid) {
-        return res.status(400).json({ Message: "Rating, comment, are required" });
+    } catch (err) {
+        return res.status(500).json({ Message: 'Database error' });
     }
-    const query = "INSERT INTO simplewtstar (rating, comment, nickname, guest_id,created_at) VALUES (?, ?, ?, ?, ?)";
-    connection.query(query, [rating, comment, nickname, guestid, new Date()], (err, result) => {
-        if (err) return res.status(500).json({ Message: err });
-        return res.json({ Message: "Your Review has been submitted." });
-    });
 });
-router.put('/reply/:id', authenticateToken, (req, res) => {
-    const feedbackId = req.params.id;
-    const { replytext } = req.body;
-    const userId = req.user.id;
-    const userRole = req.user.role;
 
-    // Check if user has access to this feedback
-    getUserHotelIds(userId, userRole, (err, hotelIds) => {
-      if (err) return res.status(500).json({ Message: 'Database error' });
+router.post('/add', async (req, res) => {
+    try {
+        const { rating, comment, guestid, nickname } = req.body;
+        // Check if rating and comment are provided
+        if (!rating || !comment || !guestid) {
+            return res.status(400).json({ Message: "Rating, comment, are required" });
+        }
+        const query = "INSERT INTO simplewtstar (rating, comment, nickname, guest_id,created_at) VALUES (?, ?, ?, ?, ?)";
+        await pool.execute(query, [rating, comment, nickname, guestid, new Date()]);
+        return res.json({ Message: "Your Review has been submitted." });
+    } catch (err) {
+        return res.status(500).json({ Message: 'Database error' });
+    }
+});
+router.put('/reply/:id', authenticateToken, async (req, res) => {
+    try {
+        const feedbackId = req.params.id;
+        const { replytext } = req.body;
+        const userId = req.user.id;
+        const userRole = req.user.role;
 
-      // First check access
-      let accessQuery = `
-        SELECT g.hotel_id 
-        FROM simplewtstar sws 
-        JOIN guest g ON sws.guest_id = g.id 
-        WHERE sws.id = ?
-      `;
-      connection.query(accessQuery, [feedbackId], (err, feedbackResult) => {
-        if (err) return res.status(500).json({ Message: err });
+        // Check if user has access to this feedback
+        const hotelIds = await getUserHotelIds(userId, userRole);
+
+        // First check access
+        let accessQuery = `
+          SELECT g.hotel_id 
+          FROM simplewtstar sws 
+          JOIN guest g ON sws.guest_id = g.id 
+          WHERE sws.id = ?
+        `;
+        const [feedbackResult] = await pool.execute(accessQuery, [feedbackId]);
         if (feedbackResult.length === 0) return res.status(404).json({ Message: "Feedback not found" });
 
         const feedbackHotelId = feedbackResult[0].hotel_id;
@@ -205,33 +206,31 @@ router.put('/reply/:id', authenticateToken, (req, res) => {
         }
 
         const query = "UPDATE simplewtstar SET reply = ? WHERE id = ?";
-        connection.query(query, [replytext, feedbackId], (err, result) => {
-          if (err) return res.status(500).json({ Message: err });
-          if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
-          return res.json({ Message: "Review updated successfully" });
-        });
-      });
-    });
+        const [result] = await pool.execute(query, [replytext, feedbackId]);
+        if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
+        return res.json({ Message: "Review updated successfully" });
+    } catch (err) {
+        return res.status(500).json({ Message: 'Database error' });
+    }
 });
-router.put('/state/:id', authenticateToken, (req, res) => {
-    const feedbackId = req.params.id;
-    const { state } = req.body;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+router.put('/state/:id', authenticateToken, async (req, res) => {
+    try {
+        const feedbackId = req.params.id;
+        const { state } = req.body;
+        const userId = req.user.id;
+        const userRole = req.user.role;
 
-    // Check if user has access to this feedback
-    getUserHotelIds(userId, userRole, (err, hotelIds) => {
-      if (err) return res.status(500).json({ Message: 'Database error' });
+        // Check if user has access to this feedback
+        const hotelIds = await getUserHotelIds(userId, userRole);
 
-      // First check access
-      let accessQuery = `
-        SELECT g.hotel_id 
-        FROM simplewtstar sws 
-        JOIN guest g ON sws.guest_id = g.id 
-        WHERE sws.id = ?
-      `;
-      connection.query(accessQuery, [feedbackId], (err, feedbackResult) => {
-        if (err) return res.status(500).json({ Message: err });
+        // First check access
+        let accessQuery = `
+          SELECT g.hotel_id 
+          FROM simplewtstar sws 
+          JOIN guest g ON sws.guest_id = g.id 
+          WHERE sws.id = ?
+        `;
+        const [feedbackResult] = await pool.execute(accessQuery, [feedbackId]);
         if (feedbackResult.length === 0) return res.status(404).json({ Message: "Feedback not found" });
 
         const feedbackHotelId = feedbackResult[0].hotel_id;
@@ -244,33 +243,31 @@ router.put('/state/:id', authenticateToken, (req, res) => {
         }
 
         const query = "UPDATE simplewtstar SET state = ? WHERE id = ?";
-        connection.query(query, [state, feedbackId], (err, result) => {
-          if (err) return res.status(500).json({ Message: err });
-          if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
-          return res.json({ Message: "Review updated successfully" });
-        });
-      });
-    });
+        const [result] = await pool.execute(query, [state, feedbackId]);
+        if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
+        return res.json({ Message: "Review updated successfully" });
+    } catch (err) {
+        return res.status(500).json({ Message: 'Database error' });
+    }
 });
 
-router.delete('/delete/:id', authenticateToken, (req, res) => {
-    const feedbackId = req.params.id;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+router.delete('/delete/:id', authenticateToken, async (req, res) => {
+    try {
+        const feedbackId = req.params.id;
+        const userId = req.user.id;
+        const userRole = req.user.role;
 
-    // Check if user has access to this feedback
-    getUserHotelIds(userId, userRole, (err, hotelIds) => {
-      if (err) return res.status(500).json({ Message: 'Database error' });
+        // Check if user has access to this feedback
+        const hotelIds = await getUserHotelIds(userId, userRole);
 
-      // First check access
-      let accessQuery = `
-        SELECT g.hotel_id 
-        FROM simplewtstar sws 
-        JOIN guest g ON sws.guest_id = g.id 
-        WHERE sws.id = ?
-      `;
-      connection.query(accessQuery, [feedbackId], (err, feedbackResult) => {
-        if (err) return res.status(500).json({ Message: err });
+        // First check access
+        let accessQuery = `
+          SELECT g.hotel_id 
+          FROM simplewtstar sws 
+          JOIN guest g ON sws.guest_id = g.id 
+          WHERE sws.id = ?
+        `;
+        const [feedbackResult] = await pool.execute(accessQuery, [feedbackId]);
         if (feedbackResult.length === 0) return res.status(404).json({ Message: "Feedback not found" });
 
         const feedbackHotelId = feedbackResult[0].hotel_id;
@@ -283,35 +280,33 @@ router.delete('/delete/:id', authenticateToken, (req, res) => {
         }
 
         const query = "UPDATE simplewtstar SET status = 9 WHERE id = ?";
-        connection.query(query, [feedbackId], (err, result) => {
-          if (err) return res.status(500).json({ Message: err });
-          if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
-          return res.json({ Message: "Review deleted successfully" });
-        });
-      });
-    });
+        const [result] = await pool.execute(query, [feedbackId]);
+        if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
+        return res.json({ Message: "Review deleted successfully" });
+    } catch (err) {
+        return res.status(500).json({ Message: 'Database error' });
+    }
 });
 
 // update review
-router.put('/update/:id', authenticateToken, (req, res) => {
-    const feedbackId = req.params.id;
-    const { rating, comment, nickname } = req.body;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+router.put('/update/:id', authenticateToken, async (req, res) => {
+    try {
+        const feedbackId = req.params.id;
+        const { rating, comment, nickname } = req.body;
+        const userId = req.user.id;
+        const userRole = req.user.role;
 
-    // Check if user has access to this feedback
-    getUserHotelIds(userId, userRole, (err, hotelIds) => {
-      if (err) return res.status(500).json({ Message: 'Database error' });
+        // Check if user has access to this feedback
+        const hotelIds = await getUserHotelIds(userId, userRole);
 
-      // First check access
-      let accessQuery = `
-        SELECT g.hotel_id 
-        FROM simplewtstar sws 
-        JOIN guest g ON sws.guest_id = g.id 
-        WHERE sws.id = ?
-      `;
-      connection.query(accessQuery, [feedbackId], (err, feedbackResult) => {
-        if (err) return res.status(500).json({ Message: err });
+        // First check access
+        let accessQuery = `
+          SELECT g.hotel_id 
+          FROM simplewtstar sws 
+          JOIN guest g ON sws.guest_id = g.id 
+          WHERE sws.id = ?
+        `;
+        const [feedbackResult] = await pool.execute(accessQuery, [feedbackId]);
         if (feedbackResult.length === 0) return res.status(404).json({ Message: "Feedback not found" });
 
         const feedbackHotelId = feedbackResult[0].hotel_id;
@@ -324,13 +319,12 @@ router.put('/update/:id', authenticateToken, (req, res) => {
         }
 
         const query = "UPDATE simplewtstar SET rating = ?, comment = ?, nickname = ?, created_at = ? WHERE id = ?";
-        connection.query(query, [rating, comment, nickname, new Date(), feedbackId], (err, result) => {
-          if (err) return res.status(500).json({ Message: err });
-          if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
-          return res.json({ Message: "Review updated successfully" });
-        });
-      });
-    });
+        const [result] = await pool.execute(query, [rating, comment, nickname, new Date(), feedbackId]);
+        if (result.affectedRows === 0) return res.status(404).json({ Message: "Feedback not found" });
+        return res.json({ Message: "Review updated successfully" });
+    } catch (err) {
+        return res.status(500).json({ Message: 'Database error' });
+    }
 });
 // Export the router for use in the main app file
 export default router;

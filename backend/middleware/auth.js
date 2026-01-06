@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { connection } from '../config/database.js';
+import pool from '../config/database.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'gss_2026_secret_key_change_in_production';
 
@@ -40,33 +40,33 @@ export const requireRole = (...allowedRoles) => {
 };
 
 // Check if user has access to a specific hotel
-export const checkHotelAccess = (req, res, next) => {
-  const userId = req.user.id;
-  const hotelId = req.body.hotelId || req.params.hotelId || req.query.hotelId;
+export const checkHotelAccess = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const hotelId = req.body.hotelId || req.params.hotelId || req.query.hotelId;
 
-  // Super admin has access to all hotels
-  if (req.user.role === 'super_admin') {
-    return next();
-  }
-
-  if (!hotelId) {
-    return res.status(400).json({ Message: 'Hotel ID required' });
-  }
-
-  const query = `
-    SELECT * FROM user_hotels 
-    WHERE user_id = ? AND hotel_id = ?
-  `;
-
-  connection.query(query, [userId, hotelId], (err, results) => {
-    if (err) {
-      return res.status(500).json({ Message: 'Database error' });
+    // Super admin has access to all hotels
+    if (req.user.role === 'super_admin') {
+      return next();
     }
+
+    if (!hotelId) {
+      return res.status(400).json({ Message: 'Hotel ID required' });
+    }
+
+    const query = `
+      SELECT * FROM user_hotels 
+      WHERE user_id = ? AND hotel_id = ?
+    `;
+
+    const [results] = await pool.execute(query, [userId, hotelId]);
     if (results.length === 0) {
       return res.status(403).json({ Message: 'Access denied to this hotel' });
     }
     next();
-  });
+  } catch (err) {
+    return res.status(500).json({ Message: 'Database error' });
+  }
 };
 
 export { JWT_SECRET };

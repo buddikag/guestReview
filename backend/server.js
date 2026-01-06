@@ -3,7 +3,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
-import { connection } from './config/database.js';
+import pool from './config/database.js';
 import { authenticateToken } from './middleware/auth.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -36,33 +36,30 @@ app.listen(port, () => {
   console.log(`Server listening on port : ${port}`);
 });
 
-// Database connection is imported from config/database.js
-
-
 // Helper function to get user's hotel IDs
-const getUserHotelIds = (userId, role, callback) => {
+const getUserHotelIds = async (userId, role) => {
   if (role === 'super_admin') {
     // Super admin can see all hotels
-    return callback(null, null);
+    return null;
   }
   
-  const query = 'SELECT hotel_id FROM user_hotels WHERE user_id = ?';
-  connection.query(query, [userId], (err, results) => {
-    if (err) return callback(err, null);
-    const hotelIds = results.map(r => r.hotel_id);
-    callback(null, hotelIds);
-  });
+  try {
+    const [results] = await pool.execute('SELECT hotel_id FROM user_hotels WHERE user_id = ?', [userId]);
+    return results.map(r => r.hotel_id);
+  } catch (err) {
+    throw err;
+  }
 };
 
-app.get("/", authenticateToken, (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 5;
-  const offset = (page - 1) * limit;
-  const userId = req.user.id;
-  const userRole = req.user.role;
+app.get("/", authenticateToken, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const offset = (page - 1) * limit;
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
-  getUserHotelIds(userId, userRole, (err, hotelIds) => {
-    if (err) return res.status(500).json({ Message: 'Database error' });
+    const hotelIds = await getUserHotelIds(userId, userRole);
 
     let countQuery, query;
     let queryParams = [];
@@ -97,26 +94,24 @@ app.get("/", authenticateToken, (req, res) => {
       queryParams = [...hotelIds, limit, offset];
     }
 
-    connection.query(countQuery, userRole === 'super_admin' ? [] : hotelIds, (countErr, countResult) => {
-      if (countErr) return res.status(500).json({ Message: countErr });
-      const totalRecords = countResult[0].count;
-      const totalPages = Math.ceil(totalRecords / limit);
-      
-      connection.query(query, queryParams, (err, result) => {
-        if (err) return res.status(500).json({ Message: err });
-        return res.json({ data: result, totalRecords, totalPages });
-      });
-    });
-  });
+    const [countResult] = await pool.execute(countQuery, userRole === 'super_admin' ? [] : hotelIds);
+    const totalRecords = countResult[0].count;
+    const totalPages = Math.ceil(totalRecords / limit);
+    
+    const [result] = await pool.execute(query, queryParams);
+    return res.json({ data: result, totalRecords, totalPages });
+  } catch (err) {
+    return res.status(500).json({ Message: 'Database error' });
+  }
 });
 
-app.get("/getGuest/:id", authenticateToken, (req, res) => {
-  const id = req.params.id;
-  const userId = req.user.id;
-  const userRole = req.user.role;
+app.get("/getGuest/:id", authenticateToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
-  getUserHotelIds(userId, userRole, (err, hotelIds) => {
-    if (err) return res.status(500).json({ Message: 'Database error' });
+    const hotelIds = await getUserHotelIds(userId, userRole);
 
     let query = `
       SELECT g.*, h.name as hotel_name 
@@ -135,107 +130,97 @@ app.get("/getGuest/:id", authenticateToken, (req, res) => {
       queryParams = [id, ...hotelIds];
     }
 
-    connection.query(query, queryParams, (err, result) => {
-      if (err) return res.status(500).json({ Message: err });
-      if (result.length === 0) return res.status(404).json({ Message: "Guest not found" });
-      return res.json(result[0]);
-    });
-  });
-});
-
-app.put("/update/:id", authenticateToken, (req, res) => {
-  const id = req.params.id;
-  const { name, phone, email, startDate, endDate, roomNumber } = req.body;
-  const userId = req.user.id;
-  const userRole = req.user.role;
-
-  if (!name || !phone || !email || !startDate || !endDate || !roomNumber) {
-    return res.status(400).json({ Message: "All fields are required" });
+    const [result] = await pool.execute(query, queryParams);
+    if (result.length === 0) return res.status(404).json({ Message: "Guest not found" });
+    return res.json(result[0]);
+  } catch (err) {
+    return res.status(500).json({ Message: 'Database error' });
   }
-
-  // First check if user has access to this guest
-  getUserHotelIds(userId, userRole, (err, hotelIds) => {
-    if (err) return res.status(500).json({ Message: 'Database error' });
-
-    let accessQuery = "SELECT hotel_id FROM guest WHERE id = ? AND status = 1";
-    connection.query(accessQuery, [id], (err, guestResult) => {
-      if (err) return res.status(500).json({ Message: err });
-      if (guestResult.length === 0) return res.status(404).json({ Message: "Guest not found" });
-
-      const guestHotelId = guestResult[0].hotel_id;
-
-      // Check access
-      if (userRole !== 'super_admin') {
-        if (!hotelIds || !hotelIds.includes(guestHotelId)) {
-          return res.status(403).json({ Message: "Access denied to this guest" });
-        }
-      }
-
-      // Check for duplicate email
-      connection.query("SELECT * FROM guest WHERE email = ? AND id != ? AND status = 1", [email, id], (err, emailResult) => {
-        if (err) return res.status(500).json({ Message: err });
-        if (emailResult.length > 0) return res.status(409).json({ Message: "Email already exists" });
-        
-        // Check for duplicate phone
-        connection.query("SELECT * FROM guest WHERE phone = ? AND id != ? AND status = 1", [phone, id], (err, phoneResult) => {
-          if (err) return res.status(500).json({ Message: err });
-          if (phoneResult.length > 0) return res.status(409).json({ Message: "Phone already exists" });
-          
-          const query = "UPDATE guest SET name = ?, phone = ?, email = ?, startDate = ?, endDate = ?, roomNumber = ? WHERE id = ?";
-          connection.query(query, [name, phone, email, startDate, endDate, roomNumber, id], (err, result) => {
-            if (err) return res.status(500).json({ Message: err });
-            if (result.affectedRows === 0) return res.status(404).json({ Message: "Guest not found" });
-            return res.json({ Message: "Guest updated successfully" });
-          });
-        });
-      });
-    });
-  });
 });
 
-app.put("/delete/:id", authenticateToken, (req, res) => {
-  const id = req.params.id;
-  const userId = req.user.id;
-  const userRole = req.user.role;
+app.put("/update/:id", authenticateToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { name, phone, email, startDate, endDate, roomNumber } = req.body;
+    const userId = req.user.id;
+    const userRole = req.user.role;
 
-  // Check if user has access to this guest
-  getUserHotelIds(userId, userRole, (err, hotelIds) => {
-    if (err) return res.status(500).json({ Message: 'Database error' });
+    if (!name || !phone || !email || !startDate || !endDate || !roomNumber) {
+      return res.status(400).json({ Message: "All fields are required" });
+    }
 
-    let accessQuery = "SELECT hotel_id FROM guest WHERE id = ? AND status = 1";
-    connection.query(accessQuery, [id], (err, guestResult) => {
-      if (err) return res.status(500).json({ Message: err });
-      if (guestResult.length === 0) return res.status(404).json({ Message: "Guest not found" });
+    // First check if user has access to this guest
+    const hotelIds = await getUserHotelIds(userId, userRole);
 
-      const guestHotelId = guestResult[0].hotel_id;
+    const [guestResult] = await pool.execute("SELECT hotel_id FROM guest WHERE id = ? AND status = 1", [id]);
+    if (guestResult.length === 0) return res.status(404).json({ Message: "Guest not found" });
 
-      // Check access
-      if (userRole !== 'super_admin') {
-        if (!hotelIds || !hotelIds.includes(guestHotelId)) {
-          return res.status(403).json({ Message: "Access denied to this guest" });
-        }
+    const guestHotelId = guestResult[0].hotel_id;
+
+    // Check access
+    if (userRole !== 'super_admin') {
+      if (!hotelIds || !hotelIds.includes(guestHotelId)) {
+        return res.status(403).json({ Message: "Access denied to this guest" });
       }
+    }
 
-      connection.query("UPDATE guest SET status = 9 WHERE id = ?", [id], (err, result) => {
-        if (err) return res.status(500).json({ Message: err });
-        if (result.affectedRows === 0) return res.status(404).json({ Message: "Guest not found" });
-        return res.json({ Message: "Guest deleted successfully" });
-      });
-    });
-  });
-});
-app.post("/add", authenticateToken, (req, res) => {
-  const { name, phone, email, startDate, endDate, roomNumber, hotelId } = req.body;
-  const userId = req.user.id;
-  const userRole = req.user.role;
-
-  if (!name || !phone || !email || !startDate || !endDate || !roomNumber || !hotelId) {
-    return res.status(400).json({ Message: "All fields including hotel are required" });
+    // Check for duplicate email
+    const [emailResult] = await pool.execute("SELECT * FROM guest WHERE email = ? AND id != ? AND status = 1", [email, id]);
+    if (emailResult.length > 0) return res.status(409).json({ Message: "Email already exists" });
+    
+    // Check for duplicate phone
+    const [phoneResult] = await pool.execute("SELECT * FROM guest WHERE phone = ? AND id != ? AND status = 1", [phone, id]);
+    if (phoneResult.length > 0) return res.status(409).json({ Message: "Phone already exists" });
+    
+    const query = "UPDATE guest SET name = ?, phone = ?, email = ?, startDate = ?, endDate = ?, roomNumber = ? WHERE id = ?";
+    const [result] = await pool.execute(query, [name, phone, email, startDate, endDate, roomNumber, id]);
+    if (result.affectedRows === 0) return res.status(404).json({ Message: "Guest not found" });
+    return res.json({ Message: "Guest updated successfully" });
+  } catch (err) {
+    return res.status(500).json({ Message: 'Database error' });
   }
+});
 
-  // Verify user has access to the selected hotel
-  getUserHotelIds(userId, userRole, (err, hotelIds) => {
-    if (err) return res.status(500).json({ Message: 'Database error' });
+app.put("/delete/:id", authenticateToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Check if user has access to this guest
+    const hotelIds = await getUserHotelIds(userId, userRole);
+
+    const [guestResult] = await pool.execute("SELECT hotel_id FROM guest WHERE id = ? AND status = 1", [id]);
+    if (guestResult.length === 0) return res.status(404).json({ Message: "Guest not found" });
+
+    const guestHotelId = guestResult[0].hotel_id;
+
+    // Check access
+    if (userRole !== 'super_admin') {
+      if (!hotelIds || !hotelIds.includes(guestHotelId)) {
+        return res.status(403).json({ Message: "Access denied to this guest" });
+      }
+    }
+
+    const [result] = await pool.execute("UPDATE guest SET status = 9 WHERE id = ?", [id]);
+    if (result.affectedRows === 0) return res.status(404).json({ Message: "Guest not found" });
+    return res.json({ Message: "Guest deleted successfully" });
+  } catch (err) {
+    return res.status(500).json({ Message: 'Database error' });
+  }
+});
+app.post("/add", authenticateToken, async (req, res) => {
+  try {
+    const { name, phone, email, startDate, endDate, roomNumber, hotelId } = req.body;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    if (!name || !phone || !email || !startDate || !endDate || !roomNumber || !hotelId) {
+      return res.status(400).json({ Message: "All fields including hotel are required" });
+    }
+
+    // Verify user has access to the selected hotel
+    const hotelIds = await getUserHotelIds(userId, userRole);
 
     if (userRole !== 'super_admin') {
       if (!hotelIds || !hotelIds.includes(parseInt(hotelId))) {
@@ -244,21 +229,17 @@ app.post("/add", authenticateToken, (req, res) => {
     }
 
     // Check for duplicate email
-    connection.query("SELECT * FROM guest WHERE email = ? AND status = 1", [email], (err, emailResult) => {
-      if (err) return res.status(500).json({ Message: err });
-      if (emailResult.length > 0) return res.status(409).json({ Message: "Email already exists" });
+    const [emailResult] = await pool.execute("SELECT * FROM guest WHERE email = ? AND status = 1", [email]);
+    if (emailResult.length > 0) return res.status(409).json({ Message: "Email already exists" });
 
-      // Check for duplicate phone
-      connection.query("SELECT * FROM guest WHERE phone = ? AND status = 1", [phone], (err, phoneResult) => {
-        if (err) return res.status(500).json({ Message: err });
-        if (phoneResult.length > 0) return res.status(409).json({ Message: "Phone already exists" });
+    // Check for duplicate phone
+    const [phoneResult] = await pool.execute("SELECT * FROM guest WHERE phone = ? AND status = 1", [phone]);
+    if (phoneResult.length > 0) return res.status(409).json({ Message: "Phone already exists" });
 
-        const query = "INSERT INTO guest (name, phone, email, startDate, endDate, roomNumber, hotel_id) VALUES (?,?,?,?,?,?,?)";
-        connection.query(query, [name, phone, email, startDate, endDate, roomNumber, hotelId], (err, result) => {
-          if (err) return res.status(500).json({ Message: err });
-          return res.json({ Message: "Guest added successfully" });
-        });
-      });
-    });
-  });
+    const query = "INSERT INTO guest (name, phone, email, startDate, endDate, roomNumber, hotel_id) VALUES (?,?,?,?,?,?,?)";
+    await pool.execute(query, [name, phone, email, startDate, endDate, roomNumber, hotelId]);
+    return res.json({ Message: "Guest added successfully" });
+  } catch (err) {
+    return res.status(500).json({ Message: 'Database error' });
+  }
 });

@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import fs from 'fs';
-import { connection } from '../config/database.js';
+import pool from '../config/database.js';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -48,77 +48,68 @@ const upload = multer({
 });
 
 // Get all hotels (super admin only, or users can see their assigned hotels)
-router.get('/', authenticateToken, (req, res) => {
-  if (req.user.role === 'super_admin') {
-    // Super admin sees all hotels
-    const query = 'SELECT * FROM hotels ORDER BY name';
-    connection.query(query, (err, results) => {
-      if (err) {
-        return res.status(500).json({ Message: 'Database error' });
-      }
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role === 'super_admin') {
+      // Super admin sees all hotels
+      const query = 'SELECT * FROM hotels ORDER BY name';
+      const [results] = await pool.execute(query);
       res.json(results);
-    });
-  } else {
-    // Regular users see only their assigned hotels
-    const query = `
-      SELECT h.* FROM hotels h
-      INNER JOIN user_hotels uh ON h.id = uh.hotel_id
-      WHERE uh.user_id = ? AND h.status = 1
-      ORDER BY h.name
-    `;
-    connection.query(query, [req.user.id], (err, results) => {
-      if (err) {
-        return res.status(500).json({ Message: 'Database error' });
-      }
+    } else {
+      // Regular users see only their assigned hotels
+      const query = `
+        SELECT h.* FROM hotels h
+        INNER JOIN user_hotels uh ON h.id = uh.hotel_id
+        WHERE uh.user_id = ? AND h.status = 1
+        ORDER BY h.name
+      `;
+      const [results] = await pool.execute(query, [req.user.id]);
       res.json(results);
-    });
+    }
+  } catch (err) {
+    return res.status(500).json({ Message: 'Database error' });
   }
 });
 
 // Create hotel (super admin only)
-router.post('/', authenticateToken, requireSuperAdmin, upload.single('logo'), (req, res) => {
-  const { name, address, phone, email } = req.body;
-  let logoPath = null;
+router.post('/', authenticateToken, requireSuperAdmin, upload.single('logo'), async (req, res) => {
+  try {
+    const { name, address, phone, email } = req.body;
+    let logoPath = null;
 
-  if (!name) {
-    // Delete uploaded file if validation fails
+    if (!name) {
+      // Delete uploaded file if validation fails
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({ Message: 'Hotel name is required' });
+    }
+
+    // If file was uploaded, save the path
+    if (req.file) {
+      logoPath = `/uploads/hotels/${req.file.filename}`;
+    }
+
+    const query = 'INSERT INTO hotels (name, address, phone, email, logo_path) VALUES (?, ?, ?, ?, ?)';
+    const [result] = await pool.execute(query, [name, address || null, phone || null, email || null, logoPath]);
+    res.status(201).json({ Message: 'Hotel created successfully', hotelId: result.insertId });
+  } catch (err) {
+    // Delete uploaded file if database insert fails
     if (req.file) {
       fs.unlinkSync(req.file.path);
     }
-    return res.status(400).json({ Message: 'Hotel name is required' });
+    return res.status(500).json({ Message: 'Database error' });
   }
-
-  // If file was uploaded, save the path
-  if (req.file) {
-    logoPath = `/uploads/hotels/${req.file.filename}`;
-  }
-
-  const query = 'INSERT INTO hotels (name, address, phone, email, logo_path) VALUES (?, ?, ?, ?, ?)';
-  connection.query(query, [name, address || null, phone || null, email || null, logoPath], (err, result) => {
-    if (err) {
-      // Delete uploaded file if database insert fails
-      if (req.file) {
-        fs.unlinkSync(req.file.path);
-      }
-      return res.status(500).json({ Message: 'Database error' });
-    }
-    res.status(201).json({ Message: 'Hotel created successfully', hotelId: result.insertId });
-  });
 });
 
 // Update hotel (super admin only)
-router.put('/:id', authenticateToken, requireSuperAdmin, upload.single('logo'), (req, res) => {
-  const hotelId = req.params.id;
-  const { name, address, phone, email, status } = req.body;
+router.put('/:id', authenticateToken, requireSuperAdmin, upload.single('logo'), async (req, res) => {
+  try {
+    const hotelId = req.params.id;
+    const { name, address, phone, email, status } = req.body;
 
-  // First get the current hotel to check for existing logo
-  connection.query('SELECT logo_path FROM hotels WHERE id = ?', [hotelId], (err, hotelResult) => {
-    if (err) {
-      if (req.file) {
-        fs.unlinkSync(req.file.path);
-      }
-      return res.status(500).json({ Message: 'Database error' });
-    }
+    // First get the current hotel to check for existing logo
+    const [hotelResult] = await pool.execute('SELECT logo_path FROM hotels WHERE id = ?', [hotelId]);
 
     if (hotelResult.length === 0) {
       if (req.file) {
@@ -182,42 +173,40 @@ router.put('/:id', authenticateToken, requireSuperAdmin, upload.single('logo'), 
     updateQuery += updateFields.join(', ') + ' WHERE id = ?';
     updateValues.push(hotelId);
 
-    connection.query(updateQuery, updateValues, (err, result) => {
-      if (err) {
-        // Delete uploaded file if database update fails
-        if (req.file) {
-          fs.unlinkSync(req.file.path);
-        }
-        return res.status(500).json({ Message: 'Database error' });
+    const [result] = await pool.execute(updateQuery, updateValues);
+    
+    if (result.affectedRows === 0) {
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
       }
-      
-      if (result.affectedRows === 0) {
-        if (req.file) {
-          fs.unlinkSync(req.file.path);
-        }
-        return res.status(404).json({ Message: 'Hotel not found' });
-      }
+      return res.status(404).json({ Message: 'Hotel not found' });
+    }
 
-      res.json({ Message: 'Hotel updated successfully' });
-    });
-  });
+    res.json({ Message: 'Hotel updated successfully' });
+  } catch (err) {
+    // Delete uploaded file if database update fails
+    if (req.file) {
+      fs.unlinkSync(req.file.path);
+    }
+    return res.status(500).json({ Message: 'Database error' });
+  }
 });
 
 // Delete hotel (super admin only)
-router.delete('/:id', authenticateToken, requireSuperAdmin, (req, res) => {
-  const hotelId = req.params.id;
+router.delete('/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const hotelId = req.params.id;
 
-  connection.query('UPDATE hotels SET status = 0 WHERE id = ?', [hotelId], (err, result) => {
-    if (err) {
-      return res.status(500).json({ Message: 'Database error' });
-    }
+    const [result] = await pool.execute('UPDATE hotels SET status = 0 WHERE id = ?', [hotelId]);
     
     if (result.affectedRows === 0) {
       return res.status(404).json({ Message: 'Hotel not found' });
     }
 
     res.json({ Message: 'Hotel deleted successfully' });
-  });
+  } catch (err) {
+    return res.status(500).json({ Message: 'Database error' });
+  }
 });
 
 export default router;
