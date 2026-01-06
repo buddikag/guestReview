@@ -31,7 +31,7 @@ router.post('/login', (req, res) => {
   const query = 'SELECT * FROM users WHERE (username = ? OR email = ?) AND status = 1';
   connection.query(query, [username, username], async (err, results) => {
     if (err) {
-      return res.status(500).json({ Message: 'Database error' });
+      return res.status(500).json({ error: err.message });
     }
 
     if (results.length === 0) {
@@ -91,6 +91,7 @@ router.get('/me', authenticateToken, (req, res) => {
   connection.query(query, [userId], (err, results) => {
     if (err) {
       return res.status(500).json({ Message: 'Database error' });
+      return res.status(500).json({error: err.message});
     }
 
     if (results.length === 0) {
@@ -106,7 +107,7 @@ router.get('/me', authenticateToken, (req, res) => {
     
     connection.query(hotelsQuery, [userId], (err, hotels) => {
       if (err) {
-        return res.status(500).json({ Message: 'Database error' });
+        return res.status(500).json({error: err.message});
       }
 
       res.json({
