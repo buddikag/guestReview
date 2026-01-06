@@ -8,13 +8,13 @@ const Home = () => {
     const [getData, setData] = useState([]);
 
     useEffect(() => {
-        axios.get('http://localhost:3000/')
+        axios.get(import.meta.env.VITE_API_URL+'api')
             .then(response => setData(response.data))
             .catch(error => console.log(error));
     }, []);
 
     const handleDelete = (id) => {
-        axios.put(`http://localhost:3000/delete/${id}`)
+        axios.put(import.meta.env.VITE_API_URL+`delete/${id}`)
             .then(response => {
                 location.reload();
             })

@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'http://localhost:3000/api';
+  const API_URL = `${import.meta.env.VITE_API_URL}api`;
 
   // Set up axios interceptor to include token in requests
   useEffect(() => {

@@ -19,8 +19,8 @@ const HotelManagement = () => {
   });
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
-
-  const API_URL = 'http://localhost:3000/api';
+  const apiUrl_for_uploads = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+  const API_URL = import.meta.env.VITE_API_URL + 'api';
 
   useEffect(() => {
     fetchHotels();
@@ -48,7 +48,7 @@ const HotelManagement = () => {
         email: hotel.email || '',
         status: hotel.status !== undefined ? hotel.status : 1,
       });
-      setLogoPreview(hotel.logo_path ? `http://localhost:3000${hotel.logo_path}` : null);
+      setLogoPreview(hotel.logo_path ? `${hotel.logo_path}` : null);
       setLogoFile(null);
     } else {
       setEditingHotel(null);
@@ -197,7 +197,7 @@ const HotelManagement = () => {
                   <td>
                     {hotel.logo_path ? (
                       <img 
-                        src={`http://localhost:3000${hotel.logo_path}`} 
+                        src={`${apiUrl_for_uploads}${hotel.logo_path}`} 
                         alt={hotel.name}
                         style={{ 
                           width: '50px', 
