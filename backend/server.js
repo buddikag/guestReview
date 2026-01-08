@@ -5,6 +5,8 @@ import express from "express";
 import cors from "cors";
 import pool from './config/database.js';
 import { authenticateToken } from './middleware/auth.js';
+import { requestLogger, errorLogger } from './middleware/requestLogger.js';
+import logger from './config/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -14,8 +16,18 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Initialize logging
+logger.info('Starting GSS Backend Server', {
+  nodeEnv: process.env.NODE_ENV || 'development',
+  port: port,
+});
+
 app.use(cors()); // for allowing cross-origin requests from frontend to backend server.It is a middleware function.
 app.use(express.json()); // for parsing application/json
+
+// Request logging middleware (should be early in the middleware stack)
+app.use(requestLogger);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -32,8 +44,54 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/hotels', hotelRoutes);
 
+// Error handling middleware (should be last)
+app.use(errorLogger);
+
+// Global error handler
+app.use((err, req, res, next) => {
+  logger.error('Unhandled error', {
+    error: err.message,
+    stack: err.stack,
+  });
+
+  res.status(err.status || 500).json({
+    Message: err.message || 'Internal server error',
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
+  });
+});
+
 app.listen(port, () => {
+  logger.info(`Server listening on port ${port}`, {
+    port: port,
+    environment: process.env.NODE_ENV || 'development',
+  });
   console.log(`Server listening on port : ${port}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT signal received: closing HTTP server');
+  process.exit(0);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at Promise', {
+    reason: reason,
+    promise: promise,
+  });
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception', {
+    error: error.message,
+    stack: error.stack,
+  });
+  process.exit(1);
 });
 
 // Helper function to get user's hotel IDs

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
 import { authenticateToken, JWT_SECRET } from '../middleware/auth.js';
+import logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -75,7 +76,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
-    return res.status(500).json({ Message: err.message });
+    return res.status(500).json({ Messagee: err.message });
   }
 });
 
@@ -105,6 +106,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       hotels: hotels
     });
   } catch (err) {
+    logger.error('Error fetching user info', { error: err.message, stack: err.stack, userId: req.user.id });
     return res.status(500).json({ Message: err.message });
   }
 });

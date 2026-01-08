@@ -21,11 +21,15 @@ const pool = mysql.createPool({
 // Test pool connection
 pool.getConnection()
   .then((connection) => {
-    console.log("MySQL pool connected");
+// Logger will be initialized after database connection
+// Using console.log here to avoid circular dependency
+console.log("MySQL pool connected");
     connection.release();
   })
   .catch((err) => {
-    console.error("MySQL pool connection error:", err);
+// Logger will be initialized after database connection
+// Using console.error here to avoid circular dependency
+console.error("MySQL pool connection error:", err);
   });
 
 export default pool;

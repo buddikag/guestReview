@@ -2,6 +2,7 @@ import { Router } from 'express';
 import jwt from "jsonwebtoken";
 import pool from './config/database.js';
 import { authenticateToken } from './middleware/auth.js';
+import logger from './config/logger.js';
 
 const router = Router();
 const SECRET = process.env.JWT_SECRET || "gss_2026_@";
@@ -60,7 +61,7 @@ router.post('/generateReviewToken', async (req, res) => {
 
     return res.json(token);
   } catch (err) {
-    console.error('Error generating token:', err);
+    logger.error('Error generating token', { error: err.message, stack: err.stack });
     return res.status(500).json({ Message: 'Failed to generate token' });
   }
 });
@@ -120,6 +121,13 @@ router.post('/generateWidgetToken', authenticateToken, async (req, res) => {
     const expirationDate = new Date();
     expirationDate.setFullYear(expirationDate.getFullYear() + 1);
 
+    logger.info('Widget token generated', { 
+      hotelId: parseInt(hotelId), 
+      hotelName: hotelResult[0].name,
+      userId: currentUser.id,
+      expiresAt: expirationDate.toISOString()
+    });
+
     return res.json({
       token: token,
       hotelId: parseInt(hotelId),
@@ -129,7 +137,12 @@ router.post('/generateWidgetToken', authenticateToken, async (req, res) => {
       generatedAt: new Date().toISOString()
     });
   } catch (err) {
-    console.error('Error generating widget token:', err);
+    logger.error('Error generating widget token', { 
+      error: err.message, 
+      stack: err.stack, 
+      hotelId,
+      userId: req.user?.id 
+    });
     return res.status(500).json({ Message: 'Failed to generate widget token' });
   }
 });
@@ -137,7 +150,7 @@ router.post('/generateWidgetToken', authenticateToken, async (req, res) => {
 // decode token and get user data
  router.get('/getUserData/:token', (req, res) => {
      const token = req.params.token;
-     console.log(token);
+     logger.debug('Token generated', { tokenLength: token.length });
   try {
     const decoded = jwt.verify(token, SECRET);
     res.json(decoded);

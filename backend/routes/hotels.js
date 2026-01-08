@@ -6,6 +6,7 @@ import { dirname } from 'path';
 import fs from 'fs';
 import pool from '../config/database.js';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth.js';
+import logger from '../config/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

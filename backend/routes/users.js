@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth.js';
+import logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -101,7 +102,7 @@ router.post('/', authenticateToken, requireSuperAdmin, async (req, res) => {
       try {
         await pool.query(hotelQuery, [hotelValues]);
       } catch (err) {
-        console.error('Error assigning hotels:', err);
+        logger.error('Error assigning hotels', { error: err.message, stack: err.stack, userId });
       }
     }
 
@@ -184,7 +185,7 @@ router.put('/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
       try {
         await pool.execute('DELETE FROM user_hotels WHERE user_id = ?', [userId]);
       } catch (err) {
-        console.error('Error deleting hotel assignments:', err);
+        logger.error('Error deleting hotel assignments', { error: err.message, stack: err.stack, userId });
       }
 
       // Insert new hotel assignments
@@ -194,7 +195,7 @@ router.put('/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
         try {
           await pool.query(hotelQuery, [hotelValues]);
         } catch (err) {
-          console.error('Error assigning hotels:', err);
+          logger.error('Error assigning hotels', { error: err.message, stack: err.stack, userId });
         }
       }
     }
