@@ -105,7 +105,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       hotels: hotels
     });
   } catch (err) {
-    return res.status(500).json({ Message: 'Database error' });
+    return res.status(500).json({ Message: err.message });
   }
 });
 
