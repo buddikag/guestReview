@@ -114,3 +114,9 @@ Frontend will run on `http://localhost:5173` (or another port if 5173 is busy)
 - Backend uses `nodemon` for auto-restart on file changes
 - Frontend uses Vite for fast HMR (Hot Module Replacement)
 
+
+
+
+
+
+
