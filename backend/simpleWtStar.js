@@ -21,11 +21,117 @@ const getUserHotelIds = async (userId, role) => {
   }
 };
 
- router.post('/generateReviewToken', (req, res) => {
-  const userId = req.body.userId;
-  const hotelId = req.body.hotelId;
+// Generate review token for widget usage (7 days expiration)
+// POST /simplewtstar/generateReviewToken
+// Body: { userId: number, hotelId: number }
+router.post('/generateReviewToken', async (req, res) => {
+  try {
+    const { userId, hotelId } = req.body;
 
-  return res.json(jwt.sign({ user_id: userId, hotel_id: hotelId }, SECRET, { expiresIn: "7d" }));
+    // Validate input
+    if (!userId || !hotelId) {
+      return res.status(400).json({ Message: 'userId and hotelId are required' });
+    }
+
+    if (isNaN(userId) || isNaN(hotelId)) {
+      return res.status(400).json({ Message: 'userId and hotelId must be numbers' });
+    }
+
+    // Verify hotel exists (optional - for better error handling)
+    try {
+      const [hotelResult] = await pool.execute('SELECT id FROM hotels WHERE id = ? AND status = 1', [hotelId]);
+      if (hotelResult.length === 0) {
+        return res.status(404).json({ Message: 'Hotel not found or inactive' });
+      }
+    } catch (err) {
+      console.error('Error checking hotel:', err);
+      // Continue anyway - hotel check is optional
+    }
+
+    // Generate token with 7 days expiration
+    const token = jwt.sign(
+      { 
+        user_id: parseInt(userId), 
+        hotel_id: parseInt(hotelId) 
+      }, 
+      SECRET, 
+      { expiresIn: "7d" }
+    );
+
+    return res.json(token);
+  } catch (err) {
+    console.error('Error generating token:', err);
+    return res.status(500).json({ Message: 'Failed to generate token' });
+  }
+});
+
+// Generate widget token with 1 year expiration (for hotel management)
+// POST /simplewtstar/generateWidgetToken
+// Body: { userId: number, hotelId: number }
+// Requires authentication - should be called from hotel management panel
+router.post('/generateWidgetToken', authenticateToken, async (req, res) => {
+  try {
+    const { userId, hotelId } = req.body;
+    const currentUser = req.user;
+
+    // Validate input
+    if (!hotelId) {
+      return res.status(400).json({ Message: 'hotelId is required' });
+    }
+
+    if (isNaN(hotelId)) {
+      return res.status(400).json({ Message: 'hotelId must be a number' });
+    }
+
+    // Use current user's ID if userId not provided, otherwise verify it matches or user is super_admin
+    const tokenUserId = userId || currentUser.id;
+    if (currentUser.role !== 'super_admin' && parseInt(tokenUserId) !== currentUser.id) {
+      return res.status(403).json({ Message: 'Unauthorized: Cannot generate token for another user' });
+    }
+
+    // Verify hotel exists
+    let [hotelResult] = await pool.execute('SELECT id, name FROM hotels WHERE id = ? AND status = 1', [hotelId]);
+    if (hotelResult.length === 0) {
+      return res.status(404).json({ Message: 'Hotel not found or inactive' });
+    }
+
+    // Check access for non-super-admin users
+    if (currentUser.role !== 'super_admin') {
+      const [userHotels] = await pool.execute(
+        'SELECT hotel_id FROM user_hotels WHERE user_id = ? AND hotel_id = ?',
+        [currentUser.id, hotelId]
+      );
+      if (userHotels.length === 0) {
+        return res.status(403).json({ Message: 'Access denied: You do not have access to this hotel' });
+      }
+    }
+
+    // Generate token with 1 year expiration
+    const token = jwt.sign(
+      { 
+        user_id: parseInt(tokenUserId), 
+        hotel_id: parseInt(hotelId) 
+      }, 
+      SECRET, 
+      { expiresIn: "365d" } // 1 year
+    );
+
+    // Calculate expiration date
+    const expirationDate = new Date();
+    expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+
+    return res.json({
+      token: token,
+      hotelId: parseInt(hotelId),
+      hotelName: hotelResult[0].name,
+      expiresIn: "365d",
+      expiresAt: expirationDate.toISOString(),
+      generatedAt: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Error generating widget token:', err);
+    return res.status(500).json({ Message: 'Failed to generate widget token' });
+  }
 });
 
 // decode token and get user data
@@ -51,6 +157,8 @@ const getUserHotelIds = async (userId, role) => {
 //   const userId = req.params.id; // Access request parameters
 //   res.send(`User ID: ${userId} from separate file.`);
 // });
+
+
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -125,6 +233,140 @@ router.get('/getPreReviews', async (req, res) => {
         const [result] = await pool.execute(query);
         return res.json(result);
     } catch (err) {
+        return res.status(500).json({ Message: 'Database error' });
+    }
+});
+
+// Get all reviews for a specific hotel (public endpoint for widgets)
+// Can be accessed via: GET /simplewtstar/hotel/:hotelId?page=1&limit=10
+router.get('/hotel/:hotelId', async (req, res) => {
+    try {
+        const hotelId = req.params.hotelId;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        if (!hotelId || isNaN(hotelId)) {
+            return res.status(400).json({ Message: 'Invalid hotel ID' });
+        }
+
+        // Get total count
+        const countQuery = `
+            SELECT COUNT(*) AS count 
+            FROM simplewtstar sws 
+            JOIN guest g ON sws.guest_id = g.id 
+            WHERE sws.status = 1 AND g.hotel_id = ? AND g.status = 1
+        `;
+        
+        const [countResult] = await pool.execute(countQuery, [hotelId]);
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get reviews with guest and hotel information
+        const query = `
+            SELECT 
+                sws.id,
+                sws.rating,
+                sws.comment,
+                sws.nickname,
+                sws.reply,
+                sws.state,
+                sws.created_at,
+                g.name AS guest_name,
+                g.email AS guest_email,
+                g.hotel_id,
+                h.name AS hotel_name
+            FROM simplewtstar sws 
+            JOIN guest g ON sws.guest_id = g.id 
+            LEFT JOIN hotels h ON g.hotel_id = h.id
+            WHERE sws.status = 1 AND g.hotel_id = ? AND g.status = 1
+            ORDER BY sws.created_at DESC 
+            LIMIT ? OFFSET ?
+        `;
+
+        const [result] = await pool.execute(query, [hotelId, limit, offset]);
+        
+        return res.json({ 
+            data: result, 
+            totalRecords, 
+            totalPages,
+            currentPage: page,
+            limit
+        });
+    } catch (err) {
+        console.error('Error fetching hotel reviews:', err);
+        return res.status(500).json({ Message: 'Database error' });
+    }
+});
+
+// Get all reviews for a specific hotel using token (alternative secure method)
+// Can be accessed via: GET /simplewtstar/hotel-token/:token?page=1&limit=10
+router.get('/hotel-token/:token', async (req, res) => {
+    try {
+        const token = req.params.token;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        // Verify token and extract hotel_id
+        let decoded;
+        try {
+            decoded = jwt.verify(token, SECRET);
+        } catch (err) {
+            return res.status(401).json({ Message: 'Invalid or expired token' });
+        }
+
+        const hotelId = decoded.hotel_id;
+        if (!hotelId) {
+            return res.status(400).json({ Message: 'Invalid token: hotel_id not found' });
+        }
+
+        // Get total count
+        const countQuery = `
+            SELECT COUNT(*) AS count 
+            FROM simplewtstar sws 
+            JOIN guest g ON sws.guest_id = g.id 
+            WHERE sws.status = 1 AND g.hotel_id = ? AND g.status = 1
+        `;
+        
+        const [countResult] = await pool.execute(countQuery, [hotelId]);
+        const totalRecords = countResult[0].count;
+        const totalPages = Math.ceil(totalRecords / limit);
+
+        // Get reviews with guest and hotel information
+        const query = `
+            SELECT 
+                sws.id,
+                sws.rating,
+                sws.comment,
+                sws.nickname,
+                sws.reply,
+                sws.state,
+                sws.created_at,
+                g.name AS guest_name,
+                g.phone AS guest_phone,
+                g.email AS guest_email,
+                g.hotel_id,
+                h.name AS hotel_name
+            FROM simplewtstar sws 
+            JOIN guest g ON sws.guest_id = g.id 
+            LEFT JOIN hotels h ON g.hotel_id = h.id
+            WHERE sws.status = 1 AND g.hotel_id = ? AND g.status = 1
+            ORDER BY sws.created_at DESC 
+            LIMIT ? OFFSET ?
+        `;
+
+        const [result] = await pool.execute(query, [hotelId, limit, offset]);
+        
+        return res.json({ 
+            data: result, 
+            totalRecords, 
+            totalPages,
+            currentPage: page,
+            limit
+        });
+    } catch (err) {
+        console.error('Error fetching hotel reviews:', err);
         return res.status(500).json({ Message: 'Database error' });
     }
 });

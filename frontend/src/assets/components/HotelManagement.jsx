@@ -19,6 +19,10 @@ const HotelManagement = () => {
   });
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [tokenData, setTokenData] = useState(null);
+  const [generatingToken, setGeneratingToken] = useState(false);
+  const [selectedHotelForToken, setSelectedHotelForToken] = useState(null);
   const apiUrl_for_uploads = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
   const API_URL = import.meta.env.VITE_API_URL + 'api';
 
@@ -156,6 +160,58 @@ const HotelManagement = () => {
     }
   };
 
+  const handleGenerateToken = async (hotel) => {
+    setSelectedHotelForToken(hotel);
+    setGeneratingToken(true);
+    setTokenData(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      // Use the base API URL without /api for simplewtstar routes
+      const baseApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+      const response = await axios.post(
+        `${baseApiUrl}/simplewtstar/generateWidgetToken`,
+        {
+          hotelId: hotel.id
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      setTokenData(response.data);
+      setShowTokenModal(true);
+    } catch (error) {
+      console.error('Error generating token:', error);
+      alert(error.response?.data?.Message || 'Failed to generate widget token');
+    } finally {
+      setGeneratingToken(false);
+    }
+  };
+
+  const handleCloseTokenModal = () => {
+    setShowTokenModal(false);
+    setTokenData(null);
+    setSelectedHotelForToken(null);
+  };
+
+  const handleCopyToken = () => {
+    if (tokenData?.token) {
+      navigator.clipboard.writeText(tokenData.token);
+      alert('Token copied to clipboard!');
+    }
+  };
+
+  const handleCopyWidgetUrl = () => {
+    if (tokenData?.token) {
+      const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+      const widgetUrl = `${apiUrl}/simplewtstar/hotel-token/${tokenData.token}`;
+      navigator.clipboard.writeText(widgetUrl);
+      alert('Widget URL copied to clipboard!');
+    }
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
@@ -221,18 +277,34 @@ const HotelManagement = () => {
                   </td>
                   <td>{hotel.created_at ? new Date(hotel.created_at).toLocaleDateString() : 'N/A'}</td>
                   <td>
-                    <button
-                      className="btn btn-sm btn-outline-primary me-2"
-                      onClick={() => handleOpenModal(hotel)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleDelete(hotel.id)}
-                    >
-                      Delete
-                    </button>
+                    <div className="btn-group" role="group">
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => handleOpenModal(hotel)}
+                        title="Edit Hotel"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline-info"
+                        onClick={() => handleGenerateToken(hotel)}
+                        disabled={generatingToken}
+                        title="Generate Widget Token"
+                      >
+                        {generatingToken && selectedHotelForToken?.id === hotel.id ? (
+                          <span className="spinner-border spinner-border-sm" role="status"></span>
+                        ) : (
+                          'Token'
+                        )}
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleDelete(hotel.id)}
+                        title="Delete Hotel"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -349,6 +421,107 @@ const HotelManagement = () => {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Token Modal */}
+        {showTokenModal && tokenData && (
+          <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header bg-info text-white">
+                  <h5 className="modal-title">
+                    🔑 Widget Token Generated
+                  </h5>
+                  <button type="button" className="btn-close btn-close-white" onClick={handleCloseTokenModal}></button>
+                </div>
+                <div className="modal-body">
+                  <div className="alert alert-info">
+                    <strong>Hotel:</strong> {tokenData.hotelName} (ID: {tokenData.hotelId})<br />
+                    <strong>Expires:</strong> {new Date(tokenData.expiresAt).toLocaleDateString()} ({tokenData.expiresIn})
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Widget Token:</label>
+                    <div className="input-group">
+                      <textarea
+                        className="form-control font-monospace"
+                        rows="4"
+                        readOnly
+                        value={tokenData.token}
+                        style={{ fontSize: '0.85rem' }}
+                      />
+                      <button
+                        className="btn btn-outline-secondary"
+                        type="button"
+                        onClick={handleCopyToken}
+                        title="Copy Token"
+                      >
+                        📋 Copy
+                      </button>
+                    </div>
+                    <small className="text-muted">Use this token in your widget to fetch reviews for this hotel</small>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Widget API URL:</label>
+                    <div className="input-group">
+                      <input
+                        type="text"
+                        className="form-control font-monospace"
+                        readOnly
+                        value={`${apiUrl_for_uploads}/simplewtstar/hotel-token/${tokenData.token}`}
+                        style={{ fontSize: '0.85rem' }}
+                      />
+                      <button
+                        className="btn btn-outline-secondary"
+                        type="button"
+                        onClick={handleCopyWidgetUrl}
+                        title="Copy Widget URL"
+                      >
+                        📋 Copy
+                      </button>
+                    </div>
+                    <small className="text-muted">Direct API endpoint with token</small>
+                  </div>
+
+                  <div className="card bg-light">
+                    <div className="card-body">
+                      <h6 className="card-title">How to use in your widget:</h6>
+                      <pre className="bg-dark text-light p-3 rounded" style={{ fontSize: '0.8rem', overflowX: 'auto' }}>
+{`// JavaScript example
+const token = '${tokenData.token}';
+const apiUrl = '${apiUrl_for_uploads}';
+
+fetch(\`\${apiUrl}/simplewtstar/hotel-token/\${token}?page=1&limit=10\`)
+  .then(response => response.json())
+  .then(data => {
+    console.log('Reviews:', data.data);
+    // Display reviews in your widget
+  });`}
+                      </pre>
+                    </div>
+                  </div>
+
+                  <div className="alert alert-warning mt-3">
+                    ⚠️ <strong>Important:</strong>
+                    <ul className="mb-0 mt-2">
+                      <li>Keep this token secure - anyone with the token can access reviews for this hotel</li>
+                      <li>Token expires in 1 year - you'll need to generate a new one after expiration</li>
+                      <li>If token is compromised, generate a new one immediately</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={handleCloseTokenModal}>
+                    Close
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={handleCopyToken}>
+                    📋 Copy Token
+                  </button>
+                </div>
               </div>
             </div>
           </div>
