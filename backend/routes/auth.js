@@ -75,7 +75,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
-    return res.status(500).json({ Message: 'Database error' });
+    return res.status(500).json({ Message: err.message });
   }
 });
 
