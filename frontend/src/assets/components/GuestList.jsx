@@ -93,10 +93,12 @@ function GuestList() {
                                     <Link onClick={() => sendWhatsAppMessage(data.id,data.phone)} className="btn btn-outline-dark btn-sm mx-2">Whatsapp</Link>                                   
                                 </td>
                                 <td>
-                                    <Link to={`/read/${data.id}`} className="btn btn-dark btn-sm">Read</Link>
-                                    <Link to={`/updateGuest/${data.id}`} className="btn btn-outline-dark btn-sm mx-2">Update</Link>
-                                    {/* <button onClick={() => handleDelete(data.id)} className="btn btn-dark btn-sm">Delete</button> */}
-                                    <Link onClick={() => handleDelete(data.id)} className="btn btn-outline-dark btn-sm mx-2">Delete</Link>
+                                    <div style={{ display: 'flex', gap: '20px' }}>
+                                        <Link to={`/read/${data.id}`} className="btn btn-dark btn-sm">Read</Link>
+                                        <Link to={`/updateGuest/${data.id}`} className="btn btn-outline-dark btn-sm">Update</Link>
+                                        {/* <button onClick={() => handleDelete(data.id)} className="btn btn-dark btn-sm">Delete</button> */}
+                                        <Link onClick={() => handleDelete(data.id)} className="btn btn-outline-dark btn-sm">Delete</Link>
+                                    </div>
                                 </td>
                             </tr>
                         );

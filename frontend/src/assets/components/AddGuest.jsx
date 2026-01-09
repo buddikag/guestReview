@@ -23,6 +23,7 @@ const AddGuest = () => {
 
   const [phoneno, setPhoneno] = useState("");
   const [errorphone, setErrorphone] = useState("");
+  const [dateError, setDateError] = useState("");
 
   useEffect(() => {
     // Fetch user's hotels
@@ -50,15 +51,78 @@ const AddGuest = () => {
     // alert("Valid phone: " + phone);
   };
 
+  const validateAndAdjustDates = (newStartDate, newEndDate) => {
+    setDateError("");
+    
+    if (!newStartDate && !newEndDate) {
+      return { start: newStartDate, end: newEndDate };
+    }
+
+    if (newStartDate && newEndDate) {
+      const start = new Date(newStartDate);
+      const end = new Date(newEndDate);
+      
+      if (end < start) {
+        // Auto-adjust: set end date to start date + 1 day
+        const adjustedEndDate = new Date(start);
+        adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+        const adjustedEndDateString = adjustedEndDate.toISOString().split('T')[0];
+        setDateError("End date must be greater than start date. Adjusted to " + adjustedEndDateString);
+        return { start: newStartDate, end: adjustedEndDateString };
+      }
+    }
+
+    return { start: newStartDate, end: newEndDate };
+  };
+
+  const handleStartDateChange = (event) => {
+    const newStartDate = event.target.value;
+    setStartDate(newStartDate);
+    
+    if (newStartDate && endDate) {
+      const result = validateAndAdjustDates(newStartDate, endDate);
+      setEndDate(result.end);
+    }
+  };
+
+  const handleEndDateChange = (event) => {
+    const newEndDate = event.target.value;
+    
+    if (startDate && newEndDate) {
+      const result = validateAndAdjustDates(startDate, newEndDate);
+      setEndDate(result.end);
+    } else {
+      setEndDate(newEndDate);
+    }
+  };
+
   const handleSubmit = (event) => {
     setError('');
     setMessage('');
+    setDateError('');
     event.preventDefault();
     validatePhone();
     
-    if (!hotelId) {
-      setError('Please select a hotel');
+    // Auto-select first hotel if not already selected
+    let selectedHotelId = hotelId;
+    if (!selectedHotelId && hotels.length > 0) {
+      selectedHotelId = hotels[0].id.toString();
+      setHotelId(selectedHotelId);
+    }
+
+    if (!selectedHotelId) {
+      setError('No hotel available');
       return;
+    }
+
+    // Final date validation before submit
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (end <= start) {
+        setDateError("End date must be greater than start date");
+        return;
+      }
     }
     
     const data = {
@@ -68,7 +132,7 @@ const AddGuest = () => {
       startDate,
       endDate,
       roomNumber,
-      hotelId: parseInt(hotelId),
+      hotelId: parseInt(selectedHotelId),
     };
     axios.post(`${import.meta.env.VITE_API_URL}add`, data)
       .then(response => {
@@ -81,6 +145,7 @@ const AddGuest = () => {
         setRoomNumber('');
         setHotelId(hotels.length === 1 ? hotels[0].id.toString() : '');
         setError('');
+        setDateError('');
         location.reload();
         //GuestList.fetchGuests(1);
       })
@@ -117,7 +182,7 @@ const AddGuest = () => {
         <div className="row">
           <div className="col-sm-6">
             <div className="form-group">
-              <label>Name</label>
+              <label style={{ color: '#000000', fontWeight: 300 }}>Name</label>
               <input
                 type="text"
                 className="form-control"
@@ -127,16 +192,17 @@ const AddGuest = () => {
             </div>
           </div>
           <div className="col-sm-6">
-            <PhoneInput
-              style={{ maxWidth: '100%' }}
-              defaultCountry="LK"
-              placeholder="Enter phone number"
-              value={phone}
-              onChange={setPhone}
-            />
-
-            {errorphone && <p style={{ color: "var(--color-danger)", marginTop: "8px", fontWeight: 500 }}>{errorphone}</p>}
-
+            <div className="form-group">
+              <label style={{ color: '#000000', fontWeight: 300 }}>Phone Number</label>
+              <PhoneInput
+                style={{ maxWidth: '100%' }}
+                defaultCountry="LK"
+                placeholder="Enter phone number"
+                value={phone}
+                onChange={setPhone}
+              />
+              {errorphone && <p style={{ color: "var(--color-danger)", marginTop: "8px", fontWeight: 500 }}>{errorphone}</p>}
+            </div>
             {/* <button onClick={validatePhone}>Submit</button> */}
           </div>
 
@@ -144,7 +210,7 @@ const AddGuest = () => {
         <div className="row">
           <div className="col-sm-6">
             <div className="form-group">
-              <label>Email</label>
+              <label style={{ color: '#000000', fontWeight: 300 }}>Email</label>
               <input
                 type="email"
                 className="form-control"
@@ -155,57 +221,72 @@ const AddGuest = () => {
           </div>
           <div className="col-sm-6">
             <div className="form-group">
-              <label>Dates of Stay</label>
-              <div className="input-group">
-                <input
-                  type="date"
-                  className="form-control"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                />
-                <span className="input-group-text" style={{ 
-                  background: 'var(--color-primary)', 
-                  color: 'var(--text-light)',
-                  fontWeight: 600
-                }}>to</span>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.target.value)}
-                />
+              <label style={{ color: '#000000', fontWeight: 300 }}>Dates of Stay</label>
+              <div className="row">
+                <div className="col-6" style={{ position: 'relative' }}>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={startDate}
+                    onChange={handleStartDateChange}
+                    style={{ 
+                      color: startDate ? 'inherit' : 'transparent'
+                    }}
+                  />
+                  {!startDate && (
+                    <span style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      pointerEvents: 'none',
+                      color: '#6c757d',
+                      fontSize: '1rem'
+                    }}>From Date</span>
+                  )}
+                </div>
+                <div className="col-6" style={{ position: 'relative' }}>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={endDate}
+                    onChange={handleEndDateChange}
+                    min={startDate || undefined}
+                    style={{ 
+                      color: endDate ? 'inherit' : 'transparent'
+                    }}
+                  />
+                  {!endDate && (
+                    <span style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      pointerEvents: 'none',
+                      color: '#6c757d',
+                      fontSize: '1rem'
+                    }}>To Date</span>
+                  )}
+                </div>
               </div>
+              {dateError && (
+                <p style={{ color: dateError.includes("Adjusted") ? "var(--color-warning)" : "var(--color-danger)", marginTop: "8px", fontWeight: 500, fontSize: "0.875rem" }}>
+                  {dateError}
+                </p>
+              )}
             </div>
           </div>
         </div>
         <div className="row">
           <div className="col-sm-6">
             <div className="form-group">
-              <label>Room Number</label>
+              <label style={{ color: '#000000', fontWeight: 300 }}>Room Number</label>
               <input
                 type="text"
                 className="form-control"
                 value={roomNumber}
                 onChange={(event) => setRoomNumber(event.target.value)}
               />
-            </div>
-          </div>
-          <div className="col-sm-6">
-            <div className="form-group">
-              <label>Hotel <span style={{ color: 'red' }}>*</span></label>
-              <select
-                className="form-control"
-                value={hotelId}
-                onChange={(event) => setHotelId(event.target.value)}
-                required
-              >
-                <option value="">Select a hotel</option>
-                {hotels.map((hotel) => (
-                  <option key={hotel.id} value={hotel.id}>
-                    {hotel.name}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </div>

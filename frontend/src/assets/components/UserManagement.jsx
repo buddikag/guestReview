@@ -170,7 +170,11 @@ const UserManagement = () => {
       <div className="container mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2>User Management</h2>
-          <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => handleOpenModal()}
+            style={{ width: 'fit-content', whiteSpace: 'nowrap' }}
+          >
             Add New User
           </button>
         </div>
@@ -208,19 +212,21 @@ const UserManagement = () => {
                     </span>
                   </td>
                   <td>
-                    <button
-                      className="btn btn-sm btn-outline-primary me-2"
-                      onClick={() => handleOpenModal(user)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleDelete(user.id)}
-                      disabled={user.id === currentUser?.id}
-                    >
-                      Delete
-                    </button>
+                    <div style={{ display: 'flex', gap: '20px' }}>
+                      <button
+                        className="btn btn-primary btn-edit"
+                        onClick={() => handleOpenModal(user)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => handleDelete(user.id)}
+                        disabled={user.id === currentUser?.id}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

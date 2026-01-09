@@ -18,3 +18,14 @@
   display: block;
 }
 
+.btn-edit {
+  background-color: #ffffff!important;
+  color: #000000;
+}
+
+.btn-edit:hover,
+.btn-edit:focus,
+.btn-edit:active {
+  background-color: #ffffff!important;
+  color: #000000;
+}

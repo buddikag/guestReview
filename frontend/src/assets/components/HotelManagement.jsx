@@ -226,7 +226,11 @@ const HotelManagement = () => {
       <div className="container mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2>Hotel Management</h2>
-          <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => handleOpenModal()}
+            style={{ width: 'fit-content', whiteSpace: 'nowrap' }}
+          >
             Add New Hotel
           </button>
         </div>
@@ -277,16 +281,16 @@ const HotelManagement = () => {
                   </td>
                   <td>{hotel.created_at ? new Date(hotel.created_at).toLocaleDateString() : 'N/A'}</td>
                   <td>
-                    <div className="btn-group" role="group">
+                    <div style={{ display: 'flex', gap: '20px' }}>
                       <button
-                        className="btn btn-sm btn-outline-primary"
+                        className="btn btn-primary"
                         onClick={() => handleOpenModal(hotel)}
                         title="Edit Hotel"
                       >
                         Edit
                       </button>
                       <button
-                        className="btn btn-sm btn-outline-info"
+                        className="btn btn-primary"
                         onClick={() => handleGenerateToken(hotel)}
                         disabled={generatingToken}
                         title="Generate Widget Token"
@@ -298,7 +302,7 @@ const HotelManagement = () => {
                         )}
                       </button>
                       <button
-                        className="btn btn-sm btn-outline-danger"
+                        className="btn btn-primary"
                         onClick={() => handleDelete(hotel.id)}
                         title="Delete Hotel"
                       >

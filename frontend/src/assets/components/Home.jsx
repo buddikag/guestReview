@@ -25,7 +25,6 @@ const Home = () => {
         <div>
             <MainNavigation />
             <div className="d-flex flex-column vh-100 justify-content-center align-items-center" style={{ 
-            background: 'radial-gradient(circle, rgb(97 61 163) 0%, rgb(60 16 114) 50%, rgb(22 1 36) 100%)',
             position: 'relative',
             overflow: 'hidden',
             minHeight: '100vh',
@@ -43,11 +42,7 @@ const Home = () => {
                     fontSize: '3.5rem',
                     fontWeight: 700,
                     marginBottom: '1.5rem',
-                    background: 'linear-gradient(135deg, #FFFFFF 0%, #E9ECEF 50%, #ADB5BD 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    textShadow: 'none'
+                    color: '#333333'
                 }}>Guest Review Management System</h1>
                 
                 <div style={{ 
@@ -65,18 +60,17 @@ const Home = () => {
                             maxHeight: '400px',
                             borderRadius: 'var(--radius-lg)',
                             boxShadow: 'var(--shadow-xl)',
-                            filter: 'brightness(0.7)',
-                            opacity: 0.9
+                            opacity: 0.95
                         }}
                     />
                 </div>
                 
                 <p className="mb-4" style={{ 
                     fontSize: '1.25rem',
-                    color: '#FFFFFF',
+                    color: '#4d2b8c',
                     marginBottom: '2rem',
                     opacity: 0.95,
-                    fontWeight: 100
+                    fontWeight: 500
                 }}>Manage your guests review efficiently and effortlessly.</p>
                 
                 <Link to="/createGuest" className="btn btn-primary btn-lg add-guest-btn-home" style={{
