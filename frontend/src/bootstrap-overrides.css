@@ -2,11 +2,13 @@
 
 /* Body Background - Override Bootstrap */
 body {
-  background-color: var(--color-primary-dark) !important;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 50%, #ffffff 100%) !important;
+  background-attachment: fixed;
 }
 
 html {
-  background-color: var(--color-primary-dark) !important;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 50%, #ffffff 100%) !important;
+  background-attachment: fixed;
 }
 
 /* Buttons */
