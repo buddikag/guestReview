@@ -85,6 +85,27 @@ function GuestList() {
         }
     };
 
+    // Send feedback link via email
+    const sendEmail = async (guestId, hotelId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}api/email/send/${guestId}`,
+                {},
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            alert('Email sent successfully!');
+        } catch (error) {
+            console.error('Error sending email:', error);
+            const errorMessage = error.response?.data?.Message || 'Failed to send email. Please check SMTP settings.';
+            alert(errorMessage);
+        }
+    };
+
     return (
         <div className="bg-white rounded" style={{
             padding: 'var(--spacing-card-padding)',
@@ -115,7 +136,7 @@ function GuestList() {
                                 <td>{data.hotel_name || 'N/A'}</td>
                                 <td>
                                     <Link onClick={() => copyFeedbakLink(data.id, data.hotel_id)} className="btn btn-outline-dark btn-sm mx-2">Copy Link</Link>
-                                    <Link onClick={() => copyFeedbakLink(data.id, data.hotel_id)} className="btn btn-outline-dark btn-sm mx-2">Mail</Link>
+                                    <Link onClick={() => sendEmail(data.id, data.hotel_id)} className="btn btn-outline-dark btn-sm mx-2">Mail</Link>
                                     <Link onClick={() => sendWhatsAppMessage(data.id, data.phone, data.hotel_id)} className="btn btn-outline-dark btn-sm mx-2">Whatsapp</Link>                                   
                                 </td>
                                 <td>

@@ -86,6 +86,56 @@ CREATE TABLE IF NOT EXISTS review_tokens (
     INDEX idx_expires_at (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Create hotel_smtp_settings table for SMTP configuration per hotel
+CREATE TABLE IF NOT EXISTS hotel_smtp_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hotel_id INT NOT NULL UNIQUE,
+    smtp_host VARCHAR(255) NOT NULL,
+    smtp_port INT NOT NULL,
+    smtp_secure BOOLEAN DEFAULT TRUE,
+    smtp_user VARCHAR(255) NOT NULL,
+    smtp_password VARCHAR(255) NOT NULL,
+    from_email VARCHAR(255) NOT NULL,
+    from_name VARCHAR(255) NOT NULL,
+    status INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Create hotel_email_templates table for customizable email templates
+CREATE TABLE IF NOT EXISTS hotel_email_templates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hotel_id INT NOT NULL,
+    subject VARCHAR(500) NOT NULL,
+    body_html TEXT NOT NULL,
+    body_text TEXT,
+    status INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE,
+    INDEX idx_hotel_id (hotel_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Create email_logs table to track sent emails
+CREATE TABLE IF NOT EXISTS email_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hotel_id INT NOT NULL,
+    guest_id INT NOT NULL,
+    recipient_email VARCHAR(255) NOT NULL,
+    subject VARCHAR(500) NOT NULL,
+    status ENUM('sent', 'failed', 'pending') DEFAULT 'pending',
+    error_message TEXT,
+    sent_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE,
+    FOREIGN KEY (guest_id) REFERENCES guest(id) ON DELETE CASCADE,
+    INDEX idx_hotel_id (hotel_id),
+    INDEX idx_guest_id (guest_id),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Note: Run 'node setup-admin.js' in the backend directory to create the super admin user
 -- Default credentials will be: superadmin / admin123
 

@@ -37,12 +37,14 @@ import simpleWtStarRoutes from './simpleWtStar.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import hotelRoutes from './routes/hotels.js';
+import emailRoutes from './routes/email.js';
 
 // Mount the routers
 app.use('/simplewtstar', simpleWtStarRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/hotels', hotelRoutes);
+app.use('/api/email', emailRoutes);
 
 // Error handling middleware (should be last)
 app.use(errorLogger);

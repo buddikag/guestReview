@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import Home from "./assets/components/Home.jsx";
 import AddGuest from "./assets/components/AddGuest.jsx";
 import UpdateGuest from "./assets/components/UpdateGuest.jsx";
+import ReadGuest from "./assets/components/ReadGuest.jsx";
 import WtNotification from "./assets/components/WtNotification.jsx";
 import SimpleWtStar from "./assets/components/surveys/SimpleWtStar.jsx";
 import ListFeedback from "./assets/components/ListFeedback.jsx";
@@ -35,6 +36,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <AddGuest />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/read/:id" 
+                element={
+                  <ProtectedRoute>
+                    <ReadGuest/>
                   </ProtectedRoute>
                 } 
               />
