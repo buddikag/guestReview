@@ -1,9 +1,7 @@
-import React, { useState, useEffect, use} from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./SimpleWtStar.css";
 import { Modal } from "bootstrap";
-import { useParams } from 'react-router-dom';
-import e from "cors";
 
 const SimpleWtStar = (props) => {
   const [rating, setRating] = useState(0);
@@ -18,12 +16,16 @@ const SimpleWtStar = (props) => {
   // 
   const [guestId, setguestId] = useState(null);
   const [hotelId, sethotelId] = useState(null);
+  const [tokenError, setTokenError] = useState(null);
+  const [isLoadingToken, setIsLoadingToken] = useState(false);
 
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
 
   useEffect(() => {
     if (token) {
+      setIsLoadingToken(true);
+      setTokenError(null);
       // decode token and get user data
       axios.get(`${import.meta.env.VITE_API_URL}simplewtstar/getUserData/${token}`,Headers={'Access-Control-Allow-Origin':'*'})
           .then((response) => {
@@ -31,9 +33,29 @@ const SimpleWtStar = (props) => {
             const newhotelId=response.data.hotel_id;
             setguestId(newguestId);
             sethotelId(newhotelId);
+            setIsLoadingToken(false);
             //(newguestId, newhotelId);
           })
-          .catch((error) => console.log(error));
+          .catch((error) => {
+            setIsLoadingToken(false);
+            console.error('Token validation error:', error);
+            if (error.response) {
+              // Backend returned an error response
+              if (error.response.status === 401) {
+                setTokenError('Invalid or expired token. Please request a new feedback link.');
+              } else {
+                setTokenError('Error validating token. Please try again or contact support.');
+              }
+            } else if (error.request) {
+              // Request was made but no response received
+              setTokenError('Unable to connect to server. Please check your connection and try again.');
+            } else {
+              // Something else happened
+              setTokenError('An unexpected error occurred. Please try again.');
+            }
+          });
+    } else {
+      setTokenError('No token provided. Please use a valid feedback link.');
     }
   }, []);
   useEffect(() => {
@@ -133,6 +155,68 @@ const SimpleWtStar = (props) => {
     setRating(0);
     setComment("");
   };
+  // Show error message if token is invalid
+  if (tokenError) {
+    return (
+      <div className="container">
+        <div className="feedback-container">
+          <div className="row justify-content-center mb-4">
+            <img className="logo" src="/logo.jpg" alt="Vite logo" style={{height: "150px"}} />
+          </div>
+          <div className="feedback-card" style={{ textAlign: 'center', padding: '2rem' }}>
+            <div className="alert alert-danger" role="alert" style={{ 
+              marginBottom: '1rem',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              backgroundColor: '#f8d7da',
+              color: '#721c24',
+              border: '1px solid #f5c6cb'
+            }}>
+              <h4 style={{ marginBottom: '1rem', color: '#721c24' }}>⚠️ Invalid Token</h4>
+              <p style={{ margin: 0, fontSize: '1.1rem' }}>{tokenError}</p>
+            </div>
+            <p style={{ marginTop: '1rem', color: '#6c757d' }}>
+              If you believe this is an error, please contact the hotel or request a new feedback link.
+            </p>
+          </div>
+        </div>
+        <footer className="footer">
+          <div className="container">
+            <p className="footer-text color-white text-center" style={{color: 'white !important'}}>
+              Copyright &copy; 2023. All rights reserved.
+            </p>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
+  // Show loading state while validating token
+  if (isLoadingToken && token) {
+    return (
+      <div className="container">
+        <div className="feedback-container">
+          <div className="row justify-content-center mb-4">
+            <img className="logo" src="/logo.jpg" alt="Vite logo" style={{height: "150px"}} />
+          </div>
+          <div className="feedback-card" style={{ textAlign: 'center', padding: '2rem' }}>
+            <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p style={{ marginTop: '1rem', color: '#6c757d' }}>Validating your feedback link...</p>
+          </div>
+        </div>
+        <footer className="footer">
+          <div className="container">
+            <p className="footer-text color-white text-center" style={{color: 'white !important'}}>
+              Copyright &copy; 2023. All rights reserved.
+            </p>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
   return (
     <div className="container">
         

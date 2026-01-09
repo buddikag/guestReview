@@ -70,6 +70,22 @@ CREATE TABLE IF NOT EXISTS user_hotels (
     UNIQUE KEY unique_user_hotel (user_id, hotel_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Create review_tokens table for short tokens (10-20 characters)
+CREATE TABLE IF NOT EXISTS review_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    token VARCHAR(20) NOT NULL UNIQUE,
+    user_id INT NOT NULL,
+    hotel_id INT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    used_at TIMESTAMP NULL,
+    status INT DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE,
+    INDEX idx_token (token),
+    INDEX idx_expires_at (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Note: Run 'node setup-admin.js' in the backend directory to create the super admin user
 -- Default credentials will be: superadmin / admin123
 
@@ -82,10 +98,3 @@ ON DUPLICATE KEY UPDATE name=name;
 -- INSERT INTO guest (name, phone, email, startDate, endDate, roomNumber, status) VALUES
 -- ('John Doe', '1234567890', 'john@example.com', '2024-01-01', '2024-01-05', '101', 1),
 -- ('Jane Smith', '0987654321', 'jane@example.com', '2024-01-02', '2024-01-06', '102', 1);
-
-
-
-
-
-
-

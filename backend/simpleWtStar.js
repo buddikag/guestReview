@@ -7,6 +7,35 @@ import logger from './config/logger.js';
 const router = Router();
 const SECRET = process.env.JWT_SECRET || "gss_2026_@";
 
+// Helper function to generate short token (10-20 characters)
+const generateShortToken = (length = 15) => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let token = '';
+  for (let i = 0; i < length; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+};
+
+// Helper function to ensure unique token
+const generateUniqueToken = async (length = 15) => {
+  let token = generateShortToken(length);
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  while (attempts < maxAttempts) {
+    const [existing] = await pool.execute('SELECT id FROM review_tokens WHERE token = ?', [token]);
+    if (existing.length === 0) {
+      return token;
+    }
+    token = generateShortToken(length);
+    attempts++;
+  }
+  
+  // If still not unique, try with longer token
+  return generateShortToken(length + 5);
+};
+
 // Helper function to get user's hotel IDs
 const getUserHotelIds = async (userId, role) => {
   if (role === 'super_admin') {
@@ -38,27 +67,31 @@ router.post('/generateReviewToken', async (req, res) => {
       return res.status(400).json({ Message: 'userId and hotelId must be numbers' });
     }
 
-    // Verify hotel exists (optional - for better error handling)
+    // Verify hotel exists
     try {
       const [hotelResult] = await pool.execute('SELECT id FROM hotels WHERE id = ? AND status = 1', [hotelId]);
       if (hotelResult.length === 0) {
         return res.status(404).json({ Message: 'Hotel not found or inactive' });
       }
     } catch (err) {
-      console.error('Error checking hotel:', err);
-      // Continue anyway - hotel check is optional
+      logger.error('Error checking hotel', { error: err.message, stack: err.stack, hotelId });
+      return res.status(500).json({ Message: 'Error validating hotel' });
     }
 
-    // Generate token with 7 days expiration
-    const token = jwt.sign(
-      { 
-        user_id: parseInt(userId), 
-        hotel_id: parseInt(hotelId) 
-      }, 
-      SECRET, 
-      { expiresIn: "7d" }
+    // Generate unique short token (15 characters)
+    const token = await generateUniqueToken(15);
+    
+    // Calculate expiration date (7 days from now)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // Store token in database
+    await pool.execute(
+      'INSERT INTO review_tokens (token, user_id, hotel_id, expires_at) VALUES (?, ?, ?, ?)',
+      [token, parseInt(userId), parseInt(hotelId), expiresAt]
     );
 
+    logger.info('Short token generated', { token, userId, hotelId, expiresAt });
     return res.json(token);
   } catch (err) {
     logger.error('Error generating token', { error: err.message, stack: err.stack });
@@ -107,24 +140,24 @@ router.post('/generateWidgetToken', authenticateToken, async (req, res) => {
       }
     }
 
-    // Generate token with 1 year expiration
-    const token = jwt.sign(
-      { 
-        user_id: parseInt(tokenUserId), 
-        hotel_id: parseInt(hotelId) 
-      }, 
-      SECRET, 
-      { expiresIn: "365d" } // 1 year
-    );
+    // Generate unique short token (15 characters)
+    const token = await generateUniqueToken(15);
 
-    // Calculate expiration date
+    // Calculate expiration date (1 year from now)
     const expirationDate = new Date();
     expirationDate.setFullYear(expirationDate.getFullYear() + 1);
 
+    // Store token in database
+    await pool.execute(
+      'INSERT INTO review_tokens (token, user_id, hotel_id, expires_at) VALUES (?, ?, ?, ?)',
+      [token, parseInt(tokenUserId), parseInt(hotelId), expirationDate]
+    );
+
     logger.info('Widget token generated', { 
+      token, 
       hotelId: parseInt(hotelId), 
       hotelName: hotelResult[0].name,
-      userId: currentUser.id,
+      userId: parseInt(tokenUserId),
       expiresAt: expirationDate.toISOString()
     });
 
@@ -148,16 +181,54 @@ router.post('/generateWidgetToken', authenticateToken, async (req, res) => {
 });
 
 // decode token and get user data
- router.get('/getUserData/:token', (req, res) => {
-     const token = req.params.token;
-     logger.debug('Token generated', { tokenLength: token.length });
+// Get user data from token (supports both short tokens and JWT tokens for backward compatibility)
+router.get('/getUserData/:token', async (req, res) => {
   try {
-    const decoded = jwt.verify(token, SECRET);
-    res.json(decoded);
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
+    const token = req.params.token;
+    
+    // If token is short (10-20 chars), look it up in database
+    if (token.length >= 10 && token.length <= 20) {
+      const [tokenResult] = await pool.execute(
+        'SELECT user_id, hotel_id, expires_at, status FROM review_tokens WHERE token = ?',
+        [token]
+      );
+
+      if (tokenResult.length === 0) {
+        return res.status(401).json({ message: "Invalid token" });
+      }
+
+      const tokenData = tokenResult[0];
+      
+      // Check if token is expired
+      const now = new Date();
+      const expiresAt = new Date(tokenData.expires_at);
+      if (expiresAt < now) {
+        return res.status(401).json({ message: "Token expired" });
+      }
+
+      // Check if token is active
+      if (tokenData.status !== 1) {
+        return res.status(401).json({ message: "Token has been deactivated" });
+      }
+
+      return res.json({
+        user_id: tokenData.user_id,
+        hotel_id: tokenData.hotel_id
+      });
+    } else {
+      // Legacy JWT token support (for backward compatibility)
+      try {
+        const decoded = jwt.verify(token, SECRET);
+        res.json(decoded);
+      } catch {
+        res.status(401).json({ message: "Invalid token" });
+      }
+    }
+  } catch (err) {
+    logger.error('Error validating token', { error: err.message, stack: err.stack });
+    res.status(500).json({ message: "Error validating token" });
   }
- })
+});
 
 // Define a GET route relative to the mount path (e.g., the final path is /users/)
 // router.get('/', (req, res) => {
@@ -314,6 +385,7 @@ router.get('/hotel/:hotelId', async (req, res) => {
 
 // Get all reviews for a specific hotel using token (alternative secure method)
 // Can be accessed via: GET /simplewtstar/hotel-token/:token?page=1&limit=10
+// Supports both short tokens (10-20 chars) and JWT tokens (for backward compatibility)
 router.get('/hotel-token/:token', async (req, res) => {
     try {
         const token = req.params.token;
@@ -321,17 +393,47 @@ router.get('/hotel-token/:token', async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
 
-        // Verify token and extract hotel_id
-        let decoded;
-        try {
-            decoded = jwt.verify(token, SECRET);
-        } catch (err) {
-            return res.status(401).json({ Message: 'Invalid or expired token' });
-        }
+        let hotelId;
 
-        const hotelId = decoded.hotel_id;
-        if (!hotelId) {
-            return res.status(400).json({ Message: 'Invalid token: hotel_id not found' });
+        // If token is short (10-20 chars), look it up in database
+        if (token.length >= 10 && token.length <= 20) {
+            const [tokenResult] = await pool.execute(
+                'SELECT hotel_id, expires_at, status FROM review_tokens WHERE token = ?',
+                [token]
+            );
+
+            if (tokenResult.length === 0) {
+                return res.status(401).json({ Message: 'Invalid token' });
+            }
+
+            const tokenData = tokenResult[0];
+            
+            // Check if token is expired
+            const now = new Date();
+            const expiresAt = new Date(tokenData.expires_at);
+            if (expiresAt < now) {
+                return res.status(401).json({ Message: 'Token expired' });
+            }
+
+            // Check if token is active
+            if (tokenData.status !== 1) {
+                return res.status(401).json({ Message: 'Token has been deactivated' });
+            }
+
+            hotelId = tokenData.hotel_id;
+        } else {
+            // Legacy JWT token support (for backward compatibility)
+            let decoded;
+            try {
+                decoded = jwt.verify(token, SECRET);
+            } catch (err) {
+                return res.status(401).json({ Message: 'Invalid or expired token' });
+            }
+
+            hotelId = decoded.hotel_id;
+            if (!hotelId) {
+                return res.status(400).json({ Message: 'Invalid token: hotel_id not found' });
+            }
         }
 
         // Get total count

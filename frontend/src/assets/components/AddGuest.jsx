@@ -103,15 +103,21 @@ const AddGuest = () => {
     event.preventDefault();
     validatePhone();
     
-    // Auto-select first hotel if not already selected
+    // Validate hotel selection
     let selectedHotelId = hotelId;
     if (!selectedHotelId && hotels.length > 0) {
-      selectedHotelId = hotels[0].id.toString();
-      setHotelId(selectedHotelId);
+      // Auto-select first hotel if only one hotel available
+      if (hotels.length === 1) {
+        selectedHotelId = hotels[0].id.toString();
+        setHotelId(selectedHotelId);
+      } else {
+        setError('Please select a hotel');
+        return;
+      }
     }
 
     if (!selectedHotelId) {
-      setError('No hotel available');
+      setError('No hotel available. Please contact administrator.');
       return;
     }
 
@@ -278,6 +284,29 @@ const AddGuest = () => {
           </div>
         </div>
         <div className="row">
+          <div className="col-sm-6">
+            <div className="form-group">
+              <label style={{ color: '#000000', fontWeight: 300 }}>Hotel {hotels.length > 1 && <span style={{ color: 'var(--color-danger)' }}>*</span>}</label>
+              <select
+                className="form-control"
+                value={hotelId}
+                onChange={(event) => setHotelId(event.target.value)}
+                required={hotels.length > 1}
+              >
+                <option value="">Select a hotel</option>
+                {hotels.map((hotel) => (
+                  <option key={hotel.id} value={hotel.id.toString()}>
+                    {hotel.name}
+                  </option>
+                ))}
+              </select>
+              {hotels.length === 0 && (
+                <p style={{ color: "var(--color-warning)", marginTop: "8px", fontWeight: 500, fontSize: "0.875rem" }}>
+                  No hotels available. Please contact administrator.
+                </p>
+              )}
+            </div>
+          </div>
           <div className="col-sm-6">
             <div className="form-group">
               <label style={{ color: '#000000', fontWeight: 300 }}>Room Number</label>

@@ -32,31 +32,57 @@ function GuestList() {
             })
             .catch(error => console.log(error));
     }
-    //
-    const sendWhatsAppMessage = (id,phone_number) => {
-        console.log(phone_number);
-        const phone = phone_number;
-        const message = import.meta.env.VITE_BASE_URL + `simplewtstar/${id}`;
-        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    // Send feedback link via WhatsApp
+    const sendWhatsAppMessage = async (userid, phone_number, hotelId) => {
+        try {
+            // Generate token for the guest
+            const res = await axios.post(
+                `${import.meta.env.VITE_API_URL}simplewtstar/generateReviewToken`,
+                {
+                    userId: userid,
+                    hotelId: hotelId || 1,
+                }
+            );
+            const token = res.data;
 
-        window.open(url, "_blank");
+            // Create feedback link with token
+            const feedbackLink = `${import.meta.env.VITE_BASE_URL}simplewtstar/review?token=${token}`;
+            
+            // Format phone number (remove any non-numeric characters except +)
+            const phone = phone_number.replace(/[^\d+]/g, '');
+            
+            // Create WhatsApp message with feedback link
+            const message = `Hello! Please share your feedback about your stay:\n${feedbackLink}`;
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+            window.open(url, "_blank");
+        } catch (error) {
+            console.error('Error generating token for WhatsApp:', error);
+            alert('Failed to generate feedback link. Please try again.');
+        }
     };  
 //  copy feedback link
     const copyFeedbakLink = async (userid, hotelId) => {
-        const res = await axios.post(
-            `${import.meta.env.VITE_API_URL}simplewtstar/generateReviewToken`,
-            {
-            userId: userid,
-            hotelId: hotelId || 1,
-            }
-        );
-        const token = res.data;
+        try {
+            const res = await axios.post(
+                `${import.meta.env.VITE_API_URL}simplewtstar/generateReviewToken`,
+                {
+                userId: userid,
+                hotelId: hotelId || 1,
+                }
+            );
+            const token = res.data;
 
-        const feedbackLink =
-            `${import.meta.env.VITE_BASE_URL}simplewtstar/review?token=${token}`;
+            // Token is now short (10-20 characters), no need to shorten
+            const feedbackLink =
+                `${import.meta.env.VITE_BASE_URL}simplewtstar/review?token=${token}`;
 
-        await navigator.clipboard.writeText(feedbackLink);
-        alert("Feedback link copied!");
+            await navigator.clipboard.writeText(feedbackLink);
+            alert(`Feedback link copied!\nToken: ${token}`);
+        } catch (error) {
+            console.error('Error generating token:', error);
+            alert('Failed to generate feedback link. Please try again.');
+        }
     };
 
     return (
@@ -90,7 +116,7 @@ function GuestList() {
                                 <td>
                                     <Link onClick={() => copyFeedbakLink(data.id, data.hotel_id)} className="btn btn-outline-dark btn-sm mx-2">Copy Link</Link>
                                     <Link onClick={() => copyFeedbakLink(data.id, data.hotel_id)} className="btn btn-outline-dark btn-sm mx-2">Mail</Link>
-                                    <Link onClick={() => sendWhatsAppMessage(data.id,data.phone)} className="btn btn-outline-dark btn-sm mx-2">Whatsapp</Link>                                   
+                                    <Link onClick={() => sendWhatsAppMessage(data.id, data.phone, data.hotel_id)} className="btn btn-outline-dark btn-sm mx-2">Whatsapp</Link>                                   
                                 </td>
                                 <td>
                                     <div style={{ display: 'flex', gap: '20px' }}>
