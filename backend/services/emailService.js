@@ -127,7 +127,7 @@ export const sendFeedbackEmail = async (hotelId, guestId, feedbackLink, baseUrl 
       room_number: guest.roomNumber || '',
       check_in_date: new Date(guest.startDate).toLocaleDateString(),
       check_out_date: new Date(guest.endDate).toLocaleDateString(),
-      base_url: baseUrl || (process.env.BASE_URL || 'http://localhost:5173')
+      base_url: baseUrl || (process.env.FRONTEND_BASE_URL || process.env.BASE_URL || 'http://localhost:5173')
     };
     
     // Replace template variables

@@ -222,9 +222,15 @@ router.post('/send/:guestId', authenticateToken, async (req, res) => {
     }
 
     // Generate token for feedback link
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    // Backend API URL for token generation
+    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    // Frontend URL for feedback links in emails (should match VITE_BASE_URL)
+    // const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://guest.creative-2.com';
+    
+    // Call backend API to generate token
     const tokenResponse = await axios.post(
-      `${baseUrl}/simplewtstar/generateReviewToken`,
+      `${backendUrl}/simplewtstar/generateReviewToken`,
       {
         userId: guestId,
         hotelId: guest.hotel_id
@@ -232,10 +238,11 @@ router.post('/send/:guestId', authenticateToken, async (req, res) => {
     );
 
     const token = tokenResponse.data;
-    const feedbackLink = `${baseUrl}/simplewtstar/review?token=${token}`;
+    // Use frontend URL for the feedback link that goes in the email
+    const feedbackLink = `${frontendUrl}/simplewtstar/review?token=${token}`;
 
-    // Send email
-    const result = await sendFeedbackEmail(guest.hotel_id, guestId, feedbackLink, baseUrl);
+    // Send email (use frontend URL for base_url in email templates)
+    const result = await sendFeedbackEmail(guest.hotel_id, guestId, feedbackLink, frontendUrl);
 
     res.json({
       Message: 'Email sent successfully',
@@ -307,6 +314,86 @@ router.get('/logs/:hotelId', authenticateToken, async (req, res) => {
     });
   } catch (err) {
     logger.error('Error fetching email logs', { error: err.message, stack: err.stack });
+    res.status(500).json({ Message: 'Database error' });
+  }
+});
+
+// Get email status for specific guests
+router.get('/status/guests', authenticateToken, async (req, res) => {
+  try {
+    const guestIds = req.query.guestIds; // Comma-separated list of guest IDs
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    if (!guestIds) {
+      return res.json({});
+    }
+
+    const guestIdArray = guestIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+    
+    if (guestIdArray.length === 0) {
+      return res.json({});
+    }
+
+    // Get user's hotel IDs for access control
+    let hotelIds = null;
+    if (userRole !== 'super_admin') {
+      hotelIds = await getUserHotelIds(userId, userRole);
+      if (!hotelIds || hotelIds.length === 0) {
+        return res.json({});
+      }
+    }
+
+    // Build query - get latest email status for each guest
+    let query;
+    let queryParams;
+
+    if (userRole === 'super_admin') {
+      query = `
+        SELECT el.guest_id, el.status, el.sent_at, el.error_message
+        FROM email_logs el
+        WHERE el.guest_id IN (${guestIdArray.map(() => '?').join(',')})
+        AND el.id IN (
+          SELECT MAX(id) 
+          FROM email_logs 
+          WHERE guest_id IN (${guestIdArray.map(() => '?').join(',')})
+          GROUP BY guest_id
+        )
+      `;
+      queryParams = [...guestIdArray, ...guestIdArray];
+    } else {
+      const placeholders = hotelIds.map(() => '?').join(',');
+      query = `
+        SELECT el.guest_id, el.status, el.sent_at, el.error_message
+        FROM email_logs el
+        JOIN guest g ON el.guest_id = g.id
+        WHERE el.guest_id IN (${guestIdArray.map(() => '?').join(',')})
+        AND g.hotel_id IN (${placeholders})
+        AND el.id IN (
+          SELECT MAX(id) 
+          FROM email_logs 
+          WHERE guest_id IN (${guestIdArray.map(() => '?').join(',')})
+          GROUP BY guest_id
+        )
+      `;
+      queryParams = [...guestIdArray, ...hotelIds, ...guestIdArray];
+    }
+
+    const [result] = await pool.execute(query, queryParams);
+    
+    // Convert to object with guest_id as key
+    const statusMap = {};
+    result.forEach(row => {
+      statusMap[row.guest_id] = {
+        status: row.status,
+        sent_at: row.sent_at,
+        error_message: row.error_message
+      };
+    });
+
+    res.json(statusMap);
+  } catch (err) {
+    logger.error('Error fetching email status', { error: err.message, stack: err.stack });
     res.status(500).json({ Message: 'Database error' });
   }
 });
