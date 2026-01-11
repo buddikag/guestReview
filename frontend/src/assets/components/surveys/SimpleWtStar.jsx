@@ -16,6 +16,8 @@ const SimpleWtStar = (props) => {
   // 
   const [guestId, setguestId] = useState(null);
   const [hotelId, sethotelId] = useState(null);
+  const [hotelData, setHotelData] = useState(null);
+  const [guestData, setGuestData] = useState(null);
   const [tokenError, setTokenError] = useState(null);
   const [isLoadingToken, setIsLoadingToken] = useState(false);
 
@@ -58,6 +60,21 @@ const SimpleWtStar = (props) => {
       setTokenError('No token provided. Please use a valid feedback link.');
     }
   }, []);
+
+  // Fetch hotel data when hotelId is available
+  useEffect(() => {
+    if (hotelId) {
+      fetchHotelData(hotelId);
+    }
+  }, [hotelId]);
+
+  // Fetch guest data when guestId is available
+  useEffect(() => {
+    if (guestId) {
+      fetchGuestData(guestId);
+    }
+  }, [guestId]);
+
   useEffect(() => {
   if (guestId) {
     init(guestId, hotelId);
@@ -71,6 +88,42 @@ const SimpleWtStar = (props) => {
   //           response => setpreReviews(response.data))
   //         .catch(error => console.log(error));
   // }, []);
+
+  // Fetch hotel data
+  const fetchHotelData = async (hotelId) => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}api/hotels`, {
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      });
+      const hotel = response.data.find(h => h.id === parseInt(hotelId));
+      if (hotel) {
+        setHotelData({
+          name: hotel.name,
+          logo_path: hotel.logo_path
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching hotel data:', error);
+    }
+  };
+
+  // Fetch guest data
+  const fetchGuestData = async (guestId) => {
+    try {
+      // Note: This endpoint may require authentication. If it fails, guest name will not be displayed.
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}getGuest/${guestId}`, {
+        headers: { 'Access-Control-Allow-Origin': '*' }
+      });
+      if (response.data) {
+        setGuestData({
+          name: response.data.name
+        });
+      }
+    } catch (error) {
+      // Silently fail - guest name is optional
+      console.error('Error fetching guest data:', error);
+    }
+  };
 
   // initiate 
   const init = (guestId, hotelId) => {
@@ -161,7 +214,21 @@ const SimpleWtStar = (props) => {
       <div className="container">
         <div className="feedback-container">
           <div className="row justify-content-center mb-4">
-            <img className="logo" src="/logo.jpg" alt="Vite logo" style={{height: "150px"}} />
+            {hotelData && hotelData.logo_path ? (
+              <div className="text-center">
+                <img 
+                  className="logo" 
+                  src={`${import.meta.env.VITE_API_URL?.replace(/\/$/, '')}${hotelData.logo_path}`} 
+                  alt={hotelData.name || "Hotel logo"} 
+                  style={{height: "150px", maxWidth: "100%", objectFit: "contain"}} 
+                />
+                {hotelData.name && (
+                  <h3 className="mt-3" style={{color: "#333"}}>{hotelData.name}</h3>
+                )}
+              </div>
+            ) : (
+              <img className="logo" src="/logo.jpg" alt="Hotel logo" style={{height: "150px"}} />
+            )}
           </div>
           <div className="feedback-card" style={{ textAlign: 'center', padding: '2rem' }}>
             <div className="alert alert-danger" role="alert" style={{ 
@@ -197,7 +264,21 @@ const SimpleWtStar = (props) => {
       <div className="container">
         <div className="feedback-container">
           <div className="row justify-content-center mb-4">
-            <img className="logo" src="/logo.jpg" alt="Vite logo" style={{height: "150px"}} />
+            {hotelData && hotelData.logo_path ? (
+              <div className="d-flex align-items-center justify-content-center gap-2">
+                <img 
+                  className="logo" 
+                  src={`${import.meta.env.VITE_API_URL?.replace(/\/$/, '')}${hotelData.logo_path}`} 
+                  alt={hotelData.name || "Hotel logo"} 
+                  style={{height: "80px", maxWidth: "100%", objectFit: "contain"}} 
+                />
+                {hotelData.name && (
+                  <h4 style={{color: "#333", margin: 0}}>{hotelData.name}</h4>
+                )}
+              </div>
+            ) : (
+              <img className="logo" src="/logo.jpg" alt="Hotel logo" style={{height: "150px"}} />
+            )}
           </div>
           <div className="feedback-card" style={{ textAlign: 'center', padding: '2rem' }}>
             <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
@@ -221,10 +302,29 @@ const SimpleWtStar = (props) => {
     <div className="container">
         
     <div className="feedback-container">
-      <div className="row justify-content-center mb-4">
-        <img className="logo" src="/logo.jpg" alt="Vite logo" style={{height: "150px"}} />
+      <div className="row justify-content-center mb-4 mt-4">
+        {hotelData && hotelData.logo_path ? (
+          <div className="d-flex align-items-center justify-content-center gap-2">
+            <img 
+              className="logo" 
+              src={`${import.meta.env.VITE_API_URL?.replace(/\/$/, '')}${hotelData.logo_path}`} 
+              alt={hotelData.name || "Hotel logo"} 
+              style={{height: "100px", maxWidth: "100%", objectFit: "contain"}} 
+            />
+            {hotelData.name && (
+              <h4 style={{color: "#333", margin: 0}}>{hotelData.name}</h4>
+            )}
+          </div>
+        ) : (
+          <img className="logo" src="/logo.jpg" alt="Hotel logo" style={{height: "150px"}} />
+        )}
       </div>
       <form className="feedback-card" onSubmit={handleSubmit}>
+        {guestData && guestData.name && (
+          <p style={{ fontSize: '1.1rem', color: '#555', marginBottom: '1rem' }}>
+            Hello {guestData.name}! 👋
+          </p>
+        )}
         <h2>Review Us</h2>
         <p className="subtitle">
           Please share your experience about our hotel.

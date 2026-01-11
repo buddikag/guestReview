@@ -28,8 +28,9 @@ const MainNavigation = () => {
     <div className="container-fluid p-0 m-0" >
     <nav className="navbar navbar-expand-lg navbar-light" style={{ backgroundColor: 'var(--color-primary)' }}>
       <div className="container">
-        <Link className="navbar-brand text-white" to="/">
-          GSS
+        <Link className="navbar-brand text-white d-flex align-items-center" to="/" style={{ textDecoration: 'none' }}>
+          <img src="/grs.png" alt="GSS Logo" style={{ height: '40px', marginRight: '10px' }} />
+          
         </Link>
         <button 
           className="navbar-toggler" 
