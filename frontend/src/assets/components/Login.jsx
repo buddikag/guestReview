@@ -78,7 +78,7 @@ const Login = () => {
         
         <div className="login-footer">
           <small className="text-muted">
-            Default credentials: superadmin / admin123
+            {/* Default credentials: superadmin / admin123 */}
           </small>
         </div>
       </div>

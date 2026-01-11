@@ -1,5 +1,6 @@
 import express from 'express';
 import pool from '../config/database.js';
+import config from '../config/app.js';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth.js';
 import { sendFeedbackEmail } from '../services/emailService.js';
 import { generateReviewToken } from '../services/tokenService.js';
@@ -222,8 +223,8 @@ router.post('/send/:guestId', authenticateToken, async (req, res) => {
     }
 
     // Generate token for feedback link directly (no HTTP request needed)
-    // Frontend URL for feedback links in emails (should match VITE_BASE_URL)
-    const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
+    // Frontend URL for feedback links in emails (from config file)
+    const frontendUrl = config.frontendBaseUrl;
     
     // Generate token directly using the service
     const token = await generateReviewToken(guestId, guest.hotel_id);
