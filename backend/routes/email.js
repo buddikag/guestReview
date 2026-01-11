@@ -1,8 +1,8 @@
 import express from 'express';
-import axios from 'axios';
 import pool from '../config/database.js';
 import { authenticateToken, requireSuperAdmin } from '../middleware/auth.js';
 import { sendFeedbackEmail } from '../services/emailService.js';
+import { generateReviewToken } from '../services/tokenService.js';
 import logger from '../config/logger.js';
 
 const router = express.Router();
@@ -221,23 +221,13 @@ router.post('/send/:guestId', authenticateToken, async (req, res) => {
       }
     }
 
-    // Generate token for feedback link
-    // Backend API URL for token generation
-    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    // Generate token for feedback link directly (no HTTP request needed)
     // Frontend URL for feedback links in emails (should match VITE_BASE_URL)
-    // const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
-    const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://guest.creative-2.com';
+    const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
     
-    // Call backend API to generate token
-    const tokenResponse = await axios.post(
-      `${backendUrl}/simplewtstar/generateReviewToken`,
-      {
-        userId: guestId,
-        hotelId: guest.hotel_id
-      }
-    );
-
-    const token = tokenResponse.data;
+    // Generate token directly using the service
+    const token = await generateReviewToken(guestId, guest.hotel_id);
+    
     // Use frontend URL for the feedback link that goes in the email
     const feedbackLink = `${frontendUrl}/simplewtstar/review?token=${token}`;
 

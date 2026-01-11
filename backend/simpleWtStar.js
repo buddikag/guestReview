@@ -2,39 +2,11 @@ import { Router } from 'express';
 import jwt from "jsonwebtoken";
 import pool from './config/database.js';
 import { authenticateToken } from './middleware/auth.js';
+import { generateReviewToken, generateWidgetToken } from './services/tokenService.js';
 import logger from './config/logger.js';
 
 const router = Router();
 const SECRET = process.env.JWT_SECRET || "gss_2026_@";
-
-// Helper function to generate short token (10-20 characters)
-const generateShortToken = (length = 15) => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < length; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
-};
-
-// Helper function to ensure unique token
-const generateUniqueToken = async (length = 15) => {
-  let token = generateShortToken(length);
-  let attempts = 0;
-  const maxAttempts = 10;
-  
-  while (attempts < maxAttempts) {
-    const [existing] = await pool.execute('SELECT id FROM review_tokens WHERE token = ?', [token]);
-    if (existing.length === 0) {
-      return token;
-    }
-    token = generateShortToken(length);
-    attempts++;
-  }
-  
-  // If still not unique, try with longer token
-  return generateShortToken(length + 5);
-};
 
 // Helper function to get user's hotel IDs
 const getUserHotelIds = async (userId, role) => {
@@ -67,34 +39,20 @@ router.post('/generateReviewToken', async (req, res) => {
       return res.status(400).json({ Message: 'userId and hotelId must be numbers' });
     }
 
-    // Verify hotel exists
-    try {
-      const [hotelResult] = await pool.execute('SELECT id FROM hotels WHERE id = ? AND status = 1', [hotelId]);
-      if (hotelResult.length === 0) {
-        return res.status(404).json({ Message: 'Hotel not found or inactive' });
-      }
-    } catch (err) {
-      logger.error('Error checking hotel', { error: err.message, stack: err.stack, hotelId });
-      return res.status(500).json({ Message: 'Error validating hotel' });
-    }
-
-    // Generate unique short token (15 characters)
-    const token = await generateUniqueToken(15);
-    
-    // Calculate expiration date (7 days from now)
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
-
-    // Store token in database
-    await pool.execute(
-      'INSERT INTO review_tokens (token, user_id, hotel_id, expires_at) VALUES (?, ?, ?, ?)',
-      [token, parseInt(userId), parseInt(hotelId), expiresAt]
-    );
-
-    logger.info('Short token generated', { token, userId, hotelId, expiresAt });
+    // Generate token using the shared service
+    const token = await generateReviewToken(parseInt(userId), parseInt(hotelId));
     return res.json(token);
   } catch (err) {
     logger.error('Error generating token', { error: err.message, stack: err.stack });
+    
+    // Handle specific error messages
+    if (err.message.includes('Hotel not found')) {
+      return res.status(404).json({ Message: err.message });
+    }
+    if (err.message.includes('required') || err.message.includes('must be numbers')) {
+      return res.status(400).json({ Message: err.message });
+    }
+    
     return res.status(500).json({ Message: 'Failed to generate token' });
   }
 });
@@ -123,13 +81,7 @@ router.post('/generateWidgetToken', authenticateToken, async (req, res) => {
       return res.status(403).json({ Message: 'Unauthorized: Cannot generate token for another user' });
     }
 
-    // Verify hotel exists
-    let [hotelResult] = await pool.execute('SELECT id, name FROM hotels WHERE id = ? AND status = 1', [hotelId]);
-    if (hotelResult.length === 0) {
-      return res.status(404).json({ Message: 'Hotel not found or inactive' });
-    }
-
-    // Check access for non-super-admin users
+    // Check access for non-super-admin users (before generating token)
     if (currentUser.role !== 'super_admin') {
       const [userHotels] = await pool.execute(
         'SELECT hotel_id FROM user_hotels WHERE user_id = ? AND hotel_id = ?',
@@ -140,31 +92,13 @@ router.post('/generateWidgetToken', authenticateToken, async (req, res) => {
       }
     }
 
-    // Generate unique short token (15 characters)
-    const token = await generateUniqueToken(15);
-
-    // Calculate expiration date (1 year from now)
-    const expirationDate = new Date();
-    expirationDate.setFullYear(expirationDate.getFullYear() + 1);
-
-    // Store token in database
-    await pool.execute(
-      'INSERT INTO review_tokens (token, user_id, hotel_id, expires_at) VALUES (?, ?, ?, ?)',
-      [token, parseInt(tokenUserId), parseInt(hotelId), expirationDate]
-    );
-
-    logger.info('Widget token generated', { 
-      token, 
-      hotelId: parseInt(hotelId), 
-      hotelName: hotelResult[0].name,
-      userId: parseInt(tokenUserId),
-      expiresAt: expirationDate.toISOString()
-    });
+    // Generate token using the shared service
+    const { token, expirationDate, hotelName } = await generateWidgetToken(parseInt(hotelId), parseInt(tokenUserId));
 
     return res.json({
       token: token,
       hotelId: parseInt(hotelId),
-      hotelName: hotelResult[0].name,
+      hotelName: hotelName,
       expiresIn: "365d",
       expiresAt: expirationDate.toISOString(),
       generatedAt: new Date().toISOString()
