@@ -123,7 +123,7 @@ router.get('/getUserData/:token', async (req, res) => {
     // If token is short (10-20 chars), look it up in database
     if (token.length >= 10 && token.length <= 20) {
       const [tokenResult] = await pool.execute(
-        'SELECT user_id, hotel_id, expires_at, status FROM review_tokens WHERE token = ?',
+        'SELECT guest_id, hotel_id, expires_at, status FROM review_tokens WHERE token = ?',
         [token]
       );
 
@@ -146,7 +146,7 @@ router.get('/getUserData/:token', async (req, res) => {
       }
 
       return res.json({
-        user_id: tokenData.user_id,
+        user_id: tokenData.guest_id, // Keep user_id key for backward compatibility
         hotel_id: tokenData.hotel_id
       });
     } else {

@@ -62,7 +62,7 @@ export const generateReviewToken = async (userId, hotelId) => {
 
     // Store token in database
     await pool.execute(
-      'INSERT INTO review_tokens (token, user_id, hotel_id, expires_at) VALUES (?, ?, ?, ?)',
+      'INSERT INTO review_tokens (token, guest_id, hotel_id, expires_at) VALUES (?, ?, ?, ?)',
       [token, parseInt(userId), parseInt(hotelId), expiresAt]
     );
 
@@ -104,10 +104,10 @@ export const generateWidgetToken = async (hotelId, tokenUserId) => {
     const expirationDate = new Date();
     expirationDate.setFullYear(expirationDate.getFullYear() + 1);
 
-    // Store token in database
+    // Store token in database (widget tokens don't need guest_id, so we set it to NULL)
     await pool.execute(
-      'INSERT INTO review_tokens (token, user_id, hotel_id, expires_at) VALUES (?, ?, ?, ?)',
-      [token, parseInt(tokenUserId), parseInt(hotelId), expirationDate]
+      'INSERT INTO review_tokens (token, guest_id, hotel_id, expires_at) VALUES (?, ?, ?, ?)',
+      [token, null, parseInt(hotelId), expirationDate]
     );
 
     logger.info('Widget token generated', { 
